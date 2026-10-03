@@ -1,0 +1,338 @@
+// Prisma schema - Aplikasi Bengkel "Self Automotive"
+// Database: PostgreSQL (native, tanpa Docker)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  TEKNISI
+}
+
+enum StockDirection {
+  MASUK
+  KELUAR
+}
+
+enum StockSource {
+  MANUAL
+  SERVICE
+  PENJUALAN
+}
+
+enum ServiceStatus {
+  DITERIMA
+  DIKERJAKAN
+  SELESAI              // = sudah dibayar (lunas)
+  MENUNGGU_PEMBAYARAN  // pekerjaan selesai dikerjakan, tagihan menunggu dibayar
+}
+
+enum DiscountType {
+  PERCENTAGE
+  NOMINAL
+}
+
+enum DiscountScope {
+  SEMUA
+  SERVICE
+  SPAREPART
+}
+
+enum StatusAktif {
+  AKTIF
+  NONAKTIF
+}
+
+model User {
+  id           Int         @id @default(autoincrement())
+  username     String      @unique
+  email        String      @unique
+  password     String
+  role         Role        @default(STAFF)
+  // Menghubungkan akun bertipe TEKNISI ke data master Teknisi miliknya,
+  // dipakai untuk membatasi akses (hanya lihat jadwal & riwayat servicenya sendiri)
+  technicianId Int?        @unique
+  technician   Technician? @relation(fields: [technicianId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([role])
+}
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String
+  email     String?
+  address   String?
+  vehicles  Vehicle[]
+  sales     SalesTransaction[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([name])
+  @@index([phone])
+}
+
+model VehicleModel {
+  id        Int       @id @default(autoincrement())
+  brand     String
+  model     String
+  year      Int
+  type      String
+  wheels    Int       @default(4)
+  vehicles  Vehicle[]
+  createdAt DateTime  @default(now())
+
+  @@index([brand, model])
+}
+
+model Vehicle {
+  id              Int                  @id @default(autoincrement())
+  customerId      Int
+  customer        Customer             @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicleModelId  Int
+  vehicleModel    VehicleModel         @relation(fields: [vehicleModelId], references: [id])
+  plateNumber     String               @unique
+  vin             String?
+  engineNumber    String?
+  color           String?
+  purchaseYear    Int?
+  note            String?
+  services        ServiceTransaction[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([customerId])
+  @@index([plateNumber])
+}
+
+model Category {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  spareparts  Sparepart[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([name])
+}
+
+model Sparepart {
+  id                Int                @id @default(autoincrement())
+  code              String             @unique
+  name              String
+  categoryId        Int
+  category          Category           @relation(fields: [categoryId], references: [id])
+  buyPrice          Decimal            @db.Decimal(14, 2)
+  sellPrice         Decimal            @db.Decimal(14, 2)
+  stock             Int                @default(0)
+  lowStockThreshold Int                @default(5)
+  stockHistory      StockHistory[]
+  serviceUsages     ServiceSparepart[]
+  salesItems        SalesItem[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([code])
+  @@index([categoryId])
+}
+
+model StockHistory {
+  id           Int            @id @default(autoincrement())
+  sparepartId  Int
+  sparepart    Sparepart      @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  direction    StockDirection
+  source       StockSource    @default(MANUAL)
+  quantity     Int
+  note         String?
+  refInvoice   String?
+  createdAt    DateTime       @default(now())
+
+  @@index([sparepartId])
+  @@index([createdAt])
+}
+
+model Technician {
+  id           Int                    @id @default(autoincrement())
+  name         String
+  skill        String?
+  status       StatusAktif            @default(AKTIF)
+  services     ServiceTransaction[]
+  schedules    TechnicianSchedule[]
+  user         User?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([status])
+}
+
+model TechnicianSchedule {
+  id           Int        @id @default(autoincrement())
+  technicianId Int
+  technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  date         DateTime
+  note         String?
+  createdAt    DateTime   @default(now())
+
+  @@index([technicianId])
+  @@index([date])
+}
+
+model ServiceType {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String?
+  estimatedCost  Decimal  @db.Decimal(14, 2)
+  createdAt      DateTime @default(now())
+
+  @@index([name])
+}
+
+model ServiceTransaction {
+  id                          Int                @id @default(autoincrement())
+  invoiceNo                   String             @unique
+  vehicleId                   Int
+  vehicle                     Vehicle            @relation(fields: [vehicleId], references: [id])
+  technicianId                Int
+  technician                  Technician         @relation(fields: [technicianId], references: [id])
+  date                        DateTime
+  km                          Int?
+  complaint                   String?
+  internalNote                String?
+  status                      ServiceStatus      @default(DITERIMA)
+  discountId                  Int?
+  discount                    Discount?          @relation(fields: [discountId], references: [id])
+  nextServiceRecommendation   String?
+  nextServiceDate             DateTime?
+  subtotal                    Decimal            @default(0) @db.Decimal(14, 2)
+  discountAmount               Decimal            @default(0) @db.Decimal(14, 2)
+  taxAmount                   Decimal            @default(0) @db.Decimal(14, 2)
+  total                       Decimal            @default(0) @db.Decimal(14, 2)
+  paid                        Decimal            @default(0) @db.Decimal(14, 2)
+  change                      Decimal            @default(0) @db.Decimal(14, 2)
+  details                     ServiceDetail[]
+  spareparts                  ServiceSparepart[]
+  logs                        ServiceLog[]
+  createdAt                   DateTime           @default(now())
+  updatedAt                   DateTime           @updatedAt
+
+  @@index([status])
+  @@index([vehicleId])
+  @@index([technicianId])
+  @@index([date])
+}
+
+// Riwayat tahapan transaksi service (Diterima -> Dikerjakan -> Tagihan -> Lunas)
+model ServiceLog {
+  id         Int                 @id @default(autoincrement())
+  serviceId  Int
+  service    ServiceTransaction  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status     ServiceStatus?
+  title      String
+  note       String?
+  actor      String?
+  createdAt  DateTime            @default(now())
+
+  @@index([serviceId])
+}
+
+model ServiceDetail {
+  id         Int                 @id @default(autoincrement())
+  serviceId  Int
+  service    ServiceTransaction  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name       String
+  description String?
+  cost       Decimal             @db.Decimal(14, 2)
+
+  @@index([serviceId])
+}
+
+model ServiceSparepart {
+  id           Int                 @id @default(autoincrement())
+  serviceId    Int
+  service      ServiceTransaction  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  sparepartId  Int
+  sparepart    Sparepart           @relation(fields: [sparepartId], references: [id])
+  qty          Int
+  price        Decimal             @db.Decimal(14, 2)
+
+  @@index([serviceId])
+  @@index([sparepartId])
+}
+
+model SalesTransaction {
+  id           Int          @id @default(autoincrement())
+  invoiceNo    String       @unique
+  customerId   Int?
+  customer     Customer?    @relation(fields: [customerId], references: [id])
+  walkInName   String?
+  date         DateTime
+  discountId   Int?
+  discount     Discount?    @relation(fields: [discountId], references: [id])
+  subtotal     Decimal      @default(0) @db.Decimal(14, 2)
+  discountAmount Decimal    @default(0) @db.Decimal(14, 2)
+  taxAmount    Decimal      @default(0) @db.Decimal(14, 2)
+  total        Decimal      @default(0) @db.Decimal(14, 2)
+  paid         Decimal      @default(0) @db.Decimal(14, 2)
+  change       Decimal      @default(0) @db.Decimal(14, 2)
+  items        SalesItem[]
+  createdAt    DateTime     @default(now())
+
+  @@index([date])
+  @@index([customerId])
+}
+
+model SalesItem {
+  id          Int               @id @default(autoincrement())
+  salesId     Int
+  sales       SalesTransaction  @relation(fields: [salesId], references: [id], onDelete: Cascade)
+  sparepartId Int
+  sparepart   Sparepart         @relation(fields: [sparepartId], references: [id])
+  qty         Int
+  price       Decimal           @db.Decimal(14, 2)
+
+  @@index([salesId])
+  @@index([sparepartId])
+}
+
+model Discount {
+  id        Int                    @id @default(autoincrement())
+  name      String
+  code      String?                @unique
+  type      DiscountType
+  value     Decimal                @db.Decimal(14, 2)
+  status    StatusAktif            @default(AKTIF)
+  scope     DiscountScope          @default(SEMUA)
+  services  ServiceTransaction[]
+  sales     SalesTransaction[]
+  createdAt DateTime               @default(now())
+
+  @@index([code])
+  @@index([status])
+}
+
+model Settings {
+  id              Int      @id @default(1)
+  businessName    String   @default("Self Automotive")
+  address         String?
+  phone           String?
+  logoUrl         String?
+  printerType     String?
+  // Cara kirim struk thermal: BROWSER | USB | SERIAL | BLUETOOTH | NETWORK | SYSTEM
+  printerConnection String @default("BROWSER")
+  // Nama printer terpasang di OS server (mode SYSTEM)
+  printerName     String?
+  // Host/port printer jaringan (mode NETWORK), umumnya IP printer & port 9100
+  printBridgeHost String?
+  printBridgePort Int?
+  taxService      Decimal  @default(10) @db.Decimal(5, 2)
+  taxSales        Decimal  @default(10) @db.Decimal(5, 2)
+  updatedAt       DateTime @updatedAt
+}
