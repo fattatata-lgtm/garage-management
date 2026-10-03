@@ -1,4 +1,4 @@
-# Self Automotive — Aplikasi Manajemen Bengkel
+# Garage Manajement — Aplikasi Manajemen Bengkel
 
 Digitalisasi operasional bengkel: **pelanggan, kendaraan, service, sparepart, penjualan, teknisi, dan laporan keuangan** dalam satu aplikasi web.
 
