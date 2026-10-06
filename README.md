@@ -1,4 +1,4 @@
-# Self Automotive — Aplikasi Manajemen Bengkel
+# Garage Management — Aplikasi Manajemen Bengkel
 
 Digitalisasi operasional bengkel: **pelanggan, kendaraan, service, sparepart, penjualan, teknisi, dan laporan keuangan** dalam satu aplikasi web.
 
@@ -410,4 +410,4 @@ Skema lengkap (enum, model, index) ada di [`backend/prisma/schema.prisma`](backe
 
 ---
 
-*Dokumen ini mengikuti PRD Aplikasi Bengkel Self Automotive v2 (per 3 Oktober 2026).*
+
