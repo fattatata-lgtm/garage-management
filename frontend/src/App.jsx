@@ -41,6 +41,7 @@ import DiscountForm from './pages/admin/DiscountForm';
 
 const OPS = ['ADMIN', 'STAFF'];
 const ADMIN = ['ADMIN'];
+const ALL = ['ADMIN', 'STAFF', 'TEKNISI'];
 
 // Pembungkus singkat: membatasi halaman berdasarkan role
 const guard = (roles, element) => <ProtectedRoute roles={roles}>{element}</ProtectedRoute>;
@@ -53,8 +54,8 @@ export default function App() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
 
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-        {/* Teknisi langsung diarahkan ke Layanan, karena Dashboard hanya untuk Admin/Staff */}
-        <Route index element={user?.role === 'TEKNISI' ? <Navigate to="/services" replace /> : <Dashboard />} />
+        {/* Dashboard: sama untuk semua role (aksi tambah stok dibatasi di dalam halaman) */}
+        <Route index element={<Dashboard />} />
 
         {/* Pelanggan */}
         <Route path="customers" element={guard(OPS, <CustomerList />)} />
@@ -84,7 +85,7 @@ export default function App() {
 
         {/* Layanan: Data Layanan, Jenis Layanan */}
         <Route path="services" element={<ServiceList />} />
-        <Route path="services/new" element={guard(OPS, <ServiceForm />)} />
+        <Route path="services/new" element={guard(ALL, <ServiceForm />)} />
         <Route path="services/:id" element={<ServiceDetail />} />
         <Route path="services/:id/edit" element={guard(OPS, <ServiceForm />)} />
         <Route path="service-types" element={guard(OPS, <ServiceTypeList />)} />

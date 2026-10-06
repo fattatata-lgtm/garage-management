@@ -8,7 +8,7 @@ router.use(authenticate, authorize('ADMIN', 'STAFF', 'TEKNISI'));
 router.get('/', ctrl.list);
 router.get('/:id', ctrl.detail);
 router.get('/:id/whatsapp-message', ctrl.whatsappMessage);
-router.post('/', authorize('ADMIN', 'STAFF'), ctrl.create);
+router.post('/', ctrl.create);                                                // Tahap 1: tambah service (Admin/Staff/Teknisi)
 router.put('/:id', authorize('ADMIN', 'STAFF'), ctrl.update);                 // edit data tahap 1
 router.patch('/:id/start', ctrl.start);                                       // Tahap 2: mulai kerjakan
 router.put('/:id/work', ctrl.saveWork);                                       // simpan pengerjaan / tagihan

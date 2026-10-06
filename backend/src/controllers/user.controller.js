@@ -13,7 +13,7 @@ async function list(req, res, next) {
 
 async function create(req, res, next) {
   try {
-    const { username, email, password, role, technicianId } = req.body;
+    const { username, email, password, role } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Username, email, dan password wajib diisi.' });
     }
@@ -22,7 +22,7 @@ async function create(req, res, next) {
     }
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { username, email, password: hashed, role: role || 'STAFF', technicianId: technicianId ? Number(technicianId) : null },
+      data: { username, email, password: hashed, role: role || 'STAFF' },
       select: { id: true, username: true, email: true, role: true },
     });
     res.status(201).json(user);
@@ -32,8 +32,9 @@ async function create(req, res, next) {
 async function update(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const { username, email, role, password, technicianId } = req.body;
-    const data = { username, email, role, technicianId: technicianId ? Number(technicianId) : null };
+    const { username, email, role, password } = req.body;
+    // technicianId dikosongkan: akun user tidak lagi ditautkan ke data teknisi
+    const data = { username, email, role, technicianId: null };
     if (password) {
       if (password.length < 8) return res.status(400).json({ message: 'Password minimal 8 karakter.' });
       data.password = await bcrypt.hash(password, 10);

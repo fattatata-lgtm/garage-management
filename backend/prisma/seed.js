@@ -48,7 +48,7 @@ async function main() {
     update: {},
     create: {
       username: 'teknisi1', email: 'teknisi1@selfautomotive.test',
-      password: teknisiPass, role: 'TEKNISI', technicianId: technician.id,
+      password: teknisiPass, role: 'TEKNISI',
     },
   });
 

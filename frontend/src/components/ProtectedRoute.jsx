@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children, roles }) {
     return (
       <div className="max-w-xl mx-auto mt-20 card p-8 text-center">
         <h2 className="text-lg font-semibold text-slate-800 mb-2">Akses Ditolak</h2>
-        <p className="text-slate-500 text-sm">Anda tidak memiliki hak akses untuk membuka halaman ini.</p>
+        <p className="text-slate-500 text-sm">Anda tidak memiliki akses ke halaman ini.</p>
       </div>
     );
   }

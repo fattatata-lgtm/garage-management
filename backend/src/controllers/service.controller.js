@@ -22,12 +22,6 @@ function addLog(client, req, serviceId, status, title, note = null) {
   });
 }
 
-function assertTeknisiOwnership(req, service) {
-  if (req.user.role === 'TEKNISI' && service.technicianId !== req.user.technicianId) {
-    throw fail('Anda hanya dapat mengakses service yang ditugaskan kepada Anda.', 403);
-  }
-}
-
 async function list(req, res, next) {
   try {
     const { status, from, to, technicianId, q } = req.query;
@@ -44,11 +38,6 @@ async function list(req, res, next) {
       ],
     };
 
-    // Teknisi hanya boleh lihat service yang ditugaskan kepadanya
-    if (req.user.role === 'TEKNISI') {
-      where.AND.push({ technicianId: req.user.technicianId || 0 });
-    }
-
     const services = await prisma.serviceTransaction.findMany({
       where,
       include: baseInclude,
@@ -63,7 +52,6 @@ async function detail(req, res, next) {
     const id = Number(req.params.id);
     const service = await prisma.serviceTransaction.findUnique({ where: { id }, include: fullInclude });
     if (!service) return res.status(404).json({ message: 'Transaksi service tidak ditemukan.' });
-    assertTeknisiOwnership(req, service);
     res.json(service);
   } catch (err) { next(err); }
 }
@@ -136,7 +124,6 @@ async function start(req, res, next) {
     if (existing.status !== 'DITERIMA') {
       return res.status(400).json({ message: 'Hanya transaksi berstatus Diterima yang bisa dimulai.' });
     }
-    assertTeknisiOwnership(req, existing);
     const service = await prisma.$transaction(async (tx) => {
       await tx.serviceTransaction.update({ where: { id }, data: { status: 'DIKERJAKAN' } });
       await addLog(tx, req, id, 'DIKERJAKAN', 'Tahap 2 - Mulai dikerjakan');
@@ -167,7 +154,6 @@ async function saveWork(req, res, next) {
         include: { spareparts: true },
       });
       if (!service) throw fail('Transaksi tidak ditemukan.', 404);
-      assertTeknisiOwnership(req, service);
       if (service.status === 'SELESAI') {
         throw fail('Transaksi yang sudah Selesai (Lunas) tidak dapat diubah.');
       }
@@ -271,7 +257,6 @@ async function finishWork(req, res, next) {
     const id = Number(req.params.id);
     const service = await prisma.serviceTransaction.findUnique({ where: { id }, include: { details: true } });
     if (!service) return res.status(404).json({ message: 'Transaksi tidak ditemukan.' });
-    assertTeknisiOwnership(req, service);
     if (service.status !== 'DIKERJAKAN') {
       return res.status(400).json({ message: 'Transaksi harus berstatus Dikerjakan sebelum ditandai selesai dikerjakan.' });
     }
@@ -360,7 +345,6 @@ async function whatsappMessage(req, res, next) {
     const id = Number(req.params.id);
     const service = await prisma.serviceTransaction.findUnique({ where: { id }, include: fullInclude });
     if (!service) return res.status(404).json({ message: 'Transaksi tidak ditemukan.' });
-    assertTeknisiOwnership(req, service);
 
     const owner = service.vehicle.customer;
     const plate = service.vehicle.plateNumber;

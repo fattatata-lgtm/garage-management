@@ -6,7 +6,7 @@ import FormPage from '../../components/ui/FormPage';
 import useForm, { errMsg } from '../../hooks/useForm';
 
 import { FaKey } from 'react-icons/fa';
-const empty = { username: '', email: '', password: '', role: 'STAFF', technicianId: '' };
+const empty = { username: '', email: '', password: '', role: 'STAFF' };
 
 // Halaman Tambah (/users/new) dan Edit (/users/:id/edit) pengguna
 export default function UserForm() {
@@ -14,22 +14,17 @@ export default function UserForm() {
   const editing = Boolean(id);
   const navigate = useNavigate();
   const { form, bind, load, reset } = useForm(empty);
-  const [technicians, setTechnicians] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const reqs = [api.get('/technicians')];
-    if (editing) reqs.push(api.get('/users'));
-    Promise.all(reqs)
-      .then(([t, u]) => {
-        setTechnicians(t.data);
-        if (u) {
-          const d = u.data.find((x) => String(x.id) === String(id));
-          if (!d) return setError('Pengguna tidak ditemukan.');
-          load({ username: d.username, email: d.email, password: '', role: d.role, technicianId: d.technicianId || '' });
-        }
+    if (!editing) { setLoading(false); return; }
+    api.get('/users')
+      .then(({ data }) => {
+        const d = data.find((x) => String(x.id) === String(id));
+        if (!d) return setError('Pengguna tidak ditemukan.');
+        load({ username: d.username, email: d.email, password: '', role: d.role });
       })
       .catch(() => setError('Gagal memuat data.'))
       .finally(() => setLoading(false));
@@ -38,7 +33,7 @@ export default function UserForm() {
   async function submit(e) {
     e.preventDefault(); setSaving(true); setError('');
     try {
-      const payload = { ...form, technicianId: form.role === 'TEKNISI' && form.technicianId ? Number(form.technicianId) : null };
+      const payload = { ...form };
       if (editing) {
         if (!payload.password) delete payload.password;
         await api.put(`/users/${id}`, payload);
@@ -68,7 +63,7 @@ export default function UserForm() {
           <p>Isi form untuk {editing ? 'mengubah' : 'menambahkan'} data pengguna. Field bertanda * wajib diisi.</p>
           <ul className="list-disc pl-5 space-y-1">
             <li><b>Username:</b> nama untuk login.</li>
-            <li><b>Role:</b> Admin, Staff, atau Teknisi. Role Teknisi ditautkan ke data teknisi.</li>
+            <li><b>Role:</b> Admin, Staff, atau Teknisi.</li>
             <li><b>Password:</b> minimal 8 karakter{editing ? '; kosongkan bila tidak diubah' : ''}.</li>
           </ul>
         </>
@@ -85,15 +80,6 @@ export default function UserForm() {
             <option value="TEKNISI">Teknisi</option>
           </select>
         </div>
-        {form.role === 'TEKNISI' && (
-          <div>
-            <label className="label">Tautkan ke Data Teknisi</label>
-            <select className="input" value={form.technicianId} onChange={bind('technicianId')}>
-              <option value="">-- Pilih Teknisi --</option>
-              {technicians.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </div>
-        )}
         <div className="sm:col-span-2">
           <label className="label">{editing ? 'Password Baru (kosongkan jika tidak diubah)' : 'Password * (min. 8 karakter)'}</label>
           <input type="password" className="input" required={!editing} minLength={8} value={form.password} onChange={bind('password')} />

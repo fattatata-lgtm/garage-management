@@ -12,7 +12,7 @@ const OPS = ['ADMIN', 'STAFF'];
 
 // Struktur menu (PRD 2.3).
 const MENUS = [
-  { label: 'Dashboard', icon: FaTachometerAlt, to: '/', roles: OPS },
+  { label: 'Dashboard', icon: FaTachometerAlt, to: '/', roles: ['ADMIN', 'STAFF', 'TEKNISI'] },
   { label: 'Pelanggan', icon: FaUsers, to: '/customers', roles: OPS },
   {
     label: 'Sparepart', icon: FaCogs, roles: OPS,
@@ -82,6 +82,9 @@ function buildMenus(role) {
 
 const ROLE_LABEL = { ADMIN: 'Administrator', STAFF: 'Staff', TEKNISI: 'Teknisi' };
 
+// Ukuran seragam untuk semua dropdown
+const DROPDOWN_WIDTH = 'min-w-[280px]';
+
 // Gaya tautan menu — teks naik sedikit, tetap rapat
 const linkBase = 'relative flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/60 focus-visible:ring-offset-1 focus-visible:ring-offset-ink-900';
 const linkActive = 'bg-white/[0.08] text-white';
@@ -143,7 +146,7 @@ export default function Navbar() {
         <div className="flex h-[72px] items-center justify-between gap-2">
 
           {/* Logo & nama bengkel (dari Admin > Pengaturan Aplikasi) */}
-          <Link to={user.role === 'TEKNISI' ? '/services' : '/'} className="group flex min-w-0 shrink-0 items-center gap-2.5" title={brandName}>
+          <Link to="/" className="group flex min-w-0 shrink-0 items-center gap-2.5" title={brandName}>
             {logo ? (
               <span className="flex h-10 items-center rounded-xl bg-white px-1.5 shadow-lg shadow-black/20 ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-105">
                 <img src={logo} alt={brandName} className="h-8 w-auto max-w-[120px] object-contain" />
@@ -165,7 +168,7 @@ export default function Navbar() {
           <Divider className="hidden min-[1340px]:block" />
 
           {/* Navigasi desktop — tetap rapat */}
-          <nav className="hidden flex-1 items-center justify-center gap-0 min-[1340px]:flex" aria-label="Menu utama">
+          <nav className={`hidden flex-1 items-center gap-0 min-[1340px]:flex ${user.role === 'TEKNISI' ? 'justify-start' : 'justify-center'}`} aria-label="Menu utama">
             {menus.map((m, idx) => {
               if (!m.items) {
                 const active = matches(pathname, m.to);
@@ -208,7 +211,7 @@ export default function Navbar() {
                     </button>
 
                     {isOpen && (
-                      <div className="absolute left-0 top-full min-w-[300px] pt-3">
+                      <div className={`absolute left-0 top-full pt-3 ${DROPDOWN_WIDTH}`}>
                         <div className="animate-drop-in overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-black/5">
                           {/* header kecil dropdown */}
                           <div className="border-b border-slate-100 bg-slate-50/70 px-4 py-2">

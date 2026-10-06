@@ -61,7 +61,7 @@ export default function ServiceList() {
   return (
     <div className="space-y-4">
       <PageHeader icon={FaWrench} title="Data Layanan" subtitle="Daftar layanan service kendaraan">
-        {isOps && <Link to="/services/new" className="btn-primary"><FaPlus aria-hidden /> Tambah Service</Link>}
+        <Link to="/services/new" className="btn-primary"><FaPlus aria-hidden /> Tambah Service</Link>
       </PageHeader>
 
       <Alert message={error} />

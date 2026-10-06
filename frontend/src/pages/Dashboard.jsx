@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { FaBoxes, FaCar, FaExclamationTriangle, FaHistory, FaMoneyBillWave, FaTachometerAlt, FaUsers, FaWallet, FaWrench, FaBarcode, FaBoxOpen, FaCog, FaCogs, FaFileInvoice, FaHashtag, FaInfoCircle, FaLayerGroup, FaUser, FaUserCog } from 'react-icons/fa';
 import api from '../api/axios';
 import Spinner from '../components/ui/Spinner';
@@ -8,6 +9,7 @@ import StatusBadge from '../components/ui/StatusBadge';
 import PageHeader from '../components/ui/PageHeader';
 import ListCard from '../components/ui/ListCard';
 import StatCard from '../components/ui/StatCard';
+import Alert from '../components/ui/Alert';
 
 const PERIODS = [
   { key: 'day', label: 'Hari Ini' },
@@ -19,7 +21,12 @@ function formatRp(n) {
   return `Rp${Number(n || 0).toLocaleString('id-ID')}`;
 }
 
+const NO_ACCESS_MSG = 'Anda tidak memiliki akses ke halaman ini.';
+
 export default function Dashboard() {
+  const { user } = useAuth();
+  const isTeknisi = user?.role === 'TEKNISI';
+  const [notif, setNotif] = useState('');
   const [period, setPeriod] = useState('day');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +37,13 @@ export default function Dashboard() {
       .then(({ data }) => setData(data))
       .finally(() => setLoading(false));
   }, [period]);
+
+  // Notifikasi hilang otomatis setelah 4 detik
+  useEffect(() => {
+    if (!notif) return undefined;
+    const t = setTimeout(() => setNotif(''), 4000);
+    return () => clearTimeout(t);
+  }, [notif]);
 
   if (loading || !data) return <Spinner />;
 
@@ -64,8 +78,16 @@ export default function Dashboard() {
         </div>
       </PageHeader>
 
+      <Alert type="error" message={notif} />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map((c) => <StatCard key={c.label} {...c} />)}
+        {cards.map((c) => (
+          <StatCard
+            key={c.label}
+            {...c}
+            to={isTeknisi && ['/customers', '/vehicles'].includes(c.to) ? undefined : c.to}
+          />
+        ))}
       </div>
 
       {/* ============ TABEL ALERT STOK MENIPIS / HABIS ============ */}
@@ -115,9 +137,15 @@ export default function Dashboard() {
                     <td className="col-no">{rowNo + 1}</td>
                     <td className="font-mono text-xs text-slate-500">{sp.code}</td>
                     <td>
-                      <Link to={`/spareparts/${sp.id}/edit`} className="cell-link">
-                        {sp.name}
-                      </Link>
+                      {isTeknisi ? (
+                        <button type="button" className="cell-link text-left" onClick={() => setNotif(NO_ACCESS_MSG)}>
+                          {sp.name}
+                        </button>
+                      ) : (
+                        <Link to={`/spareparts/${sp.id}/edit`} className="cell-link">
+                          {sp.name}
+                        </Link>
+                      )}
                     </td>
                     <td>{sp.category?.name || '-'}</td>
                     <td className={`num font-bold ${sp.status === 'HABIS' ? 'text-red-600' : 'text-amber-600'}`}>
@@ -127,12 +155,22 @@ export default function Dashboard() {
                     <td className="num">{formatRp(sp.sellPrice)}</td>
                     <td><StatusBadge status={sp.status} /></td>
                     <td className="col-actions">
-                      <Link
-                        to={`/spareparts/stock-history/in?sparepartId=${sp.id}`}
-                        className="btn-primary !px-3 !py-1.5 !text-xs"
-                      >
-                        <FaBoxes aria-hidden /> Tambah Stok
-                      </Link>
+                      {isTeknisi ? (
+                        <button
+                          type="button"
+                          onClick={() => setNotif(NO_ACCESS_MSG)}
+                          className="btn-primary !px-3 !py-1.5 !text-xs"
+                        >
+                          <FaBoxes aria-hidden /> Tambah Stok
+                        </button>
+                      ) : (
+                        <Link
+                          to={`/spareparts/stock-history/in?sparepartId=${sp.id}`}
+                          className="btn-primary !px-3 !py-1.5 !text-xs"
+                        >
+                          <FaBoxes aria-hidden /> Tambah Stok
+                        </Link>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -144,9 +182,15 @@ export default function Dashboard() {
             <span>
               Total <b className="text-slate-700">{data.lowStockAlerts.length}</b> sparepart perlu perhatian
             </span>
-            <Link to="/reports/stock" className="font-semibold text-brand-600 hover:underline">
-              Lihat Laporan Stok Lengkap →
-            </Link>
+            {isTeknisi ? (
+              <button type="button" onClick={() => setNotif(NO_ACCESS_MSG)} className="font-semibold text-brand-600 hover:underline">
+                Lihat Laporan Stok Lengkap →
+              </button>
+            ) : (
+              <Link to="/reports/stock" className="font-semibold text-brand-600 hover:underline">
+                Lihat Laporan Stok Lengkap →
+              </Link>
+            )}
           </div>
         </ListCard>
       )}
