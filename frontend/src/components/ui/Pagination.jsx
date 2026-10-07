@@ -17,7 +17,7 @@ export default function Pagination({ pg }) {
   if (total <= perPage) return null;
   const from = start + 1;
   const to = Math.min(start + perPage, total);
-  const btn = 'flex h-9 min-w-[2.25rem] items-center justify-center rounded-lg border px-2.5 text-sm font-semibold transition';
+  const btn = 'flex h-9 min-w-[2.25rem] items-center justify-center rounded-[10px] border px-2.5 text-sm font-semibold transition';
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
@@ -29,7 +29,7 @@ export default function Pagination({ pg }) {
           ? <span key={`e${i}`} className="px-1 text-sm text-slate-400">…</span>
           : (
             <button key={p} type="button" onClick={() => setPage(p)} aria-current={p === page ? 'page' : undefined}
-              className={`${btn} ${p === page ? 'border-brand-600 bg-brand-600 text-white shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>{p}</button>
+              className={`${btn} ${p === page ? 'border-brand-600 bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-600/25' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>{p}</button>
           )))}
         <button type="button" className={`${btn} border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40`}
           disabled={page >= pageCount} onClick={() => setPage(page + 1)} aria-label="Halaman berikutnya"><FaChevronRight className="text-[10px]" aria-hidden /></button>

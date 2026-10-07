@@ -26,17 +26,17 @@ export default function Modal({ open, title, onClose, children, wide }) {
   // dan tertimpa navbar / bar sticky.
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-3 backdrop-blur-[2px] no-print animate-fade-in sm:p-4"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-ink-950/60 p-3 backdrop-blur-sm no-print animate-fade-in sm:p-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
     >
       <div
         role="dialog"
         aria-modal="true"
-        className={`card flex w-full ${wide ? 'max-w-2xl' : 'max-w-md'} max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden animate-scale-in sm:max-h-[calc(100dvh-2rem)]`}
+        className={`card flex w-full shadow-lift ${wide ? 'max-w-2xl' : 'max-w-md'} max-h-[calc(100dvh-1.5rem)] flex-col overflow-hidden animate-scale-in sm:max-h-[calc(100dvh-2rem)]`}
       >
         <div className="card-header shrink-0 justify-between">
           <h3>{title}</h3>
-          <button onClick={onClose} aria-label="Tutup" className="rounded p-1 text-white/70 transition hover:bg-white/10 hover:text-white">
+          <button onClick={onClose} aria-label="Tutup" className="rounded-lg p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
             <FaTimes />
           </button>
         </div>
