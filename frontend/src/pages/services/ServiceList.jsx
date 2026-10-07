@@ -7,6 +7,8 @@ import EmptyState from '../../components/ui/EmptyState';
 import StatusBadge from '../../components/ui/StatusBadge';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import Alert from '../../components/ui/Alert';
 import { FaPlus, FaSearch, FaWrench, FaCalendarAlt, FaCar, FaCog, FaFileInvoice, FaHashtag, FaInfoCircle, FaMoneyBillWave, FaUser, FaUserCog } from 'react-icons/fa';
 import SearchInput from '../../components/ui/SearchInput';
@@ -41,6 +43,7 @@ export default function ServiceList() {
     return api.get(`/services?${params.toString()}`).then(({ data }) => setServices(data)).finally(() => setLoading(false));
   }
 
+  const pg = usePagination(services, 10, [q, status, from, to].join('|'));
   useEffect(() => {
     const t = setTimeout(load, q ? 350 : 0);
     return () => clearTimeout(t);
@@ -98,12 +101,12 @@ export default function ServiceList() {
               </tr>
             </thead>
             <tbody>
-              {services.map((s, rowNo) => {
+              {pg.pageItems.map((s, rowNo) => {
                 const lunas = s.status === 'SELESAI';
                 const canDelete = isOps && (!lunas || user.role === 'ADMIN');
                 return (
                   <tr key={s.id}>
-                    <td className="col-no">{rowNo + 1}</td>
+                    <td className="col-no">{pg.start + rowNo + 1}</td>
                     <td><Link to={`/services/${s.id}`} className="cell-link">{s.invoiceNo}</Link></td>
                     <td>{new Date(s.date).toLocaleDateString('id-ID')}</td>
                     <td>{s.vehicle.plateNumber}</td>
@@ -124,6 +127,7 @@ export default function ServiceList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

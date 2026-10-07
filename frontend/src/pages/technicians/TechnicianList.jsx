@@ -6,6 +6,8 @@ import EmptyState from '../../components/ui/EmptyState';
 import StatusBadge from '../../components/ui/StatusBadge';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaHardHat, FaPlus, FaCog, FaHashtag, FaInfoCircle, FaTools, FaUser, FaWrench, FaCalendarAlt } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions, ViewAction } from '../../components/ui/RowActions';
 
@@ -41,6 +43,7 @@ export default function TechnicianList() {
     setLoading(true);
     api.get('/technicians').then(({ data }) => setTechnicians(data)).finally(() => setLoading(false));
   }
+  const pg = usePagination(technicians, 10, '');
   useEffect(() => { load(); }, []);
 
   async function handleDelete(t) {
@@ -80,9 +83,9 @@ export default function TechnicianList() {
               </tr>
             </thead>
             <tbody>
-              {technicians.map((t, rowNo) => (
+              {pg.pageItems.map((t, rowNo) => (
                 <tr key={t.id}>
-                  <td className="col-no">{rowNo + 1}</td>
+                  <td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>
                     <Link to={`/technicians/${t.id}`} className="cell-link inline-flex items-center gap-2">
                       <TechnicianAvatar name={t.name} />
@@ -105,6 +108,7 @@ export default function TechnicianList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

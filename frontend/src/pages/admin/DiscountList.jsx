@@ -6,6 +6,8 @@ import EmptyState from '../../components/ui/EmptyState';
 import StatusBadge from '../../components/ui/StatusBadge';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaPlus, FaTags, FaBarcode, FaBullseye, FaCog, FaHashtag, FaInfoCircle, FaPercent, FaTag } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions } from '../../components/ui/RowActions';
 
@@ -20,6 +22,7 @@ export default function DiscountList() {
     setLoading(true);
     api.get('/discounts').then(({ data }) => setItems(data)).finally(() => setLoading(false));
   }
+  const pg = usePagination(items, 10, '');
   useEffect(() => { load(); }, []);
 
   async function handleDelete(d) {
@@ -39,8 +42,8 @@ export default function DiscountList() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaTag className="mr-1 inline text-[10px]" aria-hidden /> Nama</th><th><FaBarcode className="mr-1 inline text-[10px]" aria-hidden /> Kode</th><th><FaTag className="mr-1 inline text-[10px]" aria-hidden /> Tipe</th><th className="num"><FaPercent className="mr-1 inline text-[10px]" aria-hidden /> Nilai</th><th><FaBullseye className="mr-1 inline text-[10px]" aria-hidden /> Berlaku Untuk</th><th><FaInfoCircle className="mr-1 inline text-[10px]" aria-hidden /> Status</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
-              {items.map((d, rowNo) => (
-                <tr key={d.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((d, rowNo) => (
+                <tr key={d.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>{d.name}</td><td>{d.code || '-'}</td><td>{d.type === 'PERCENTAGE' ? 'Persentase' : 'Nominal'}</td>
                   <td className="num">{d.type === 'PERCENTAGE' ? `${Number(d.value)}%` : formatRp(d.value)}</td>
                   <td>{d.scope}</td><td><StatusBadge status={d.status} /></td>
@@ -51,6 +54,7 @@ export default function DiscountList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

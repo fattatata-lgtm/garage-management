@@ -289,6 +289,15 @@ npm run dev                   # http://localhost:5173
 
 Alternatif untuk `prisma:deploy` + `seed`: impor `database/garage_management.sql` (lihat [Opsi B — Impor File SQL](docs/INSTALASI.md#opsi-b--impor-file-sql)).
 
+**Data contoh lengkap** (200 sparepart, 14 kategori, 66 jenis layanan, 83 master kendaraan, 8 teknisi, 25 pelanggan + 29 kendaraan, 8 diskon) ada di `backend/prisma/seed-data/`:
+
+```bash
+npm run seed          # isi/perbarui data (aman diulang, tidak menggandakan data)
+npm run seed:reset    # HAPUS data master & transaksi lama dulu, lalu isi ulang (user & pengaturan tetap)
+```
+
+Tanpa Node/Prisma? Impor `database/data_master.sql` setelah struktur tabel dibuat (dibuat otomatis dari data yang sama lewat `node backend/prisma/export-sql.js`).
+
 ### Variabel Lingkungan Penting
 
 | File | Variabel | Keterangan |

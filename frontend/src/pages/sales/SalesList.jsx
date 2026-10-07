@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { useAuth } from '../../context/AuthContext';
 import { RowActions, ViewAction, DeleteAction } from '../../components/ui/RowActions';
 import { FaCog, FaPlus, FaSearch, FaShoppingCart, FaCalendarAlt, FaFileInvoice, FaHashtag, FaListUl, FaMoneyBillWave, FaUser } from 'react-icons/fa';
@@ -37,6 +39,7 @@ export default function SalesList() {
     catch (err) { alert(err?.response?.data?.message || 'Gagal menghapus transaksi.'); }
   }
 
+  const pg = usePagination(sales, 10, [q, from, to].join('|'));
   useEffect(() => { const t = setTimeout(load, 350); return () => clearTimeout(t); }, [q, from, to]);
 
   return (
@@ -60,8 +63,8 @@ export default function SalesList() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaFileInvoice className="mr-1 inline text-[10px]" aria-hidden /> No. Invoice</th><th><FaCalendarAlt className="mr-1 inline text-[10px]" aria-hidden /> Tanggal</th><th><FaUser className="mr-1 inline text-[10px]" aria-hidden /> Pelanggan</th><th className="num"><FaListUl className="mr-1 inline text-[10px]" aria-hidden /> Item</th><th className="num"><FaMoneyBillWave className="mr-1 inline text-[10px]" aria-hidden /> Total</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
-              {sales.map((s, rowNo) => (
-                <tr key={s.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((s, rowNo) => (
+                <tr key={s.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td><Link to={`/sales/${s.id}`} className="cell-link">{s.invoiceNo}</Link></td>
                   <td>{new Date(s.date).toLocaleString('id-ID')}</td>
                   <td>{s.customer ? s.customer.name : (s.walkInName || 'Pelanggan Umum')}</td>
@@ -78,6 +81,7 @@ export default function SalesList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

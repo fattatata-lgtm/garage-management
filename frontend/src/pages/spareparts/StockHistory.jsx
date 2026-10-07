@@ -5,12 +5,15 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaArrowDown, FaArrowUp, FaHistory, FaBarcode, FaCalendarAlt, FaCogs, FaExchangeAlt, FaHashtag, FaRandom, FaSortNumericUp, FaStickyNote } from 'react-icons/fa';
 
 export default function StockHistory() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const pg = usePagination(history, 10, '');
   useEffect(() => {
     api.get('/spareparts/history/all').then(({ data }) => setHistory(data)).finally(() => setLoading(false));
   }, []);
@@ -27,8 +30,8 @@ export default function StockHistory() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaCalendarAlt className="mr-1 inline text-[10px]" aria-hidden /> Tanggal</th><th><FaBarcode className="mr-1 inline text-[10px]" aria-hidden /> Kode</th><th><FaCogs className="mr-1 inline text-[10px]" aria-hidden /> Sparepart</th><th><FaExchangeAlt className="mr-1 inline text-[10px]" aria-hidden /> Arah</th><th><FaRandom className="mr-1 inline text-[10px]" aria-hidden /> Sumber</th><th className="num"><FaSortNumericUp className="mr-1 inline text-[10px]" aria-hidden /> Jumlah</th><th><FaStickyNote className="mr-1 inline text-[10px]" aria-hidden /> Keterangan</th></tr></thead>
             <tbody>
-              {history.map((h, rowNo) => (
-                <tr key={h.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((h, rowNo) => (
+                <tr key={h.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>{new Date(h.createdAt).toLocaleString('id-ID')}</td>
                   <td>{h.sparepart.code}</td>
                   <td>{h.sparepart.name}</td>
@@ -41,6 +44,7 @@ export default function StockHistory() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

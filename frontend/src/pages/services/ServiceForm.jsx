@@ -4,6 +4,7 @@ import api from '../../api/axios';
 import Spinner from '../../components/ui/Spinner';
 import FormPage from '../../components/ui/FormPage';
 import InfoRow from '../../components/ui/InfoRow';
+import VehiclePicker from '../../components/ui/VehiclePicker';
 import useForm, { errMsg } from '../../hooks/useForm';
 import { FaWrench, FaCar, FaMotorcycle, FaUserCog, FaCalendarAlt, FaCommentDots, FaUser, FaPhone, FaPalette, FaPlus } from 'react-icons/fa';
 
@@ -112,10 +113,12 @@ export default function ServiceForm() {
       >
         <div>
           <Label icon={FaCar}>Kendaraan *</Label>
-          <select className="input" required value={form.vehicleId} onChange={bind('vehicleId')}>
-            <option value="">-- Pilih Kendaraan (No. Plat) --</option>
-            {vehicles.map((v) => <option key={v.id} value={v.id}>{v.plateNumber} - {v.customer.name} ({v.vehicleModel.brand} {v.vehicleModel.model})</option>)}
-          </select>
+          <VehiclePicker
+            required
+            options={vehicles}
+            value={form.vehicleId}
+            onPick={(v) => bind('vehicleId')({ target: { value: String(v.id) } })}
+          />
         </div>
 
         {selected && (

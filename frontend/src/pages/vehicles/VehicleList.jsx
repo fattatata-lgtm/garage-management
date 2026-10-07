@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaSearch, FaCar, FaPlus, FaCalendarDay, FaCircleNotch, FaCog, FaHashtag, FaIdCard, FaPalette, FaUser } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions, ViewAction } from '../../components/ui/RowActions';
 import SearchInput from '../../components/ui/SearchInput';
@@ -23,6 +25,7 @@ export default function VehicleList() {
       .finally(() => setLoading(false));
   }
 
+  const pg = usePagination(vehicles, 10, q);
   useEffect(() => {
     const t = setTimeout(() => load(q), q ? 350 : 0);
     return () => clearTimeout(t);
@@ -51,8 +54,8 @@ export default function VehicleList() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaUser className="mr-1 inline text-[10px]" aria-hidden /> Pemilik</th><th><FaCar className="mr-1 inline text-[10px]" aria-hidden /> Merk &amp; Model</th><th><FaCalendarDay className="mr-1 inline text-[10px]" aria-hidden /> Tahun</th><th><FaCircleNotch className="mr-1 inline text-[10px]" aria-hidden /> Roda</th><th><FaIdCard className="mr-1 inline text-[10px]" aria-hidden /> Plat Nomor</th><th><FaPalette className="mr-1 inline text-[10px]" aria-hidden /> Warna</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
-              {vehicles.map((v, rowNo) => (
-                <tr key={v.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((v, rowNo) => (
+                <tr key={v.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>{v.customer.name}</td>
                   <td>{v.vehicleModel.brand} {v.vehicleModel.model}</td>
                   <td>{v.vehicleModel.year}</td>
@@ -67,6 +70,7 @@ export default function VehicleList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

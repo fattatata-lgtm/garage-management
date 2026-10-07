@@ -4,6 +4,8 @@ import Spinner from '../../components/ui/Spinner';
 import Modal from '../../components/ui/Modal';
 import Alert from '../../components/ui/Alert';
 import StatusBadge from '../../components/ui/StatusBadge';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaAlignLeft, FaBarcode, FaBullseye, FaCog, FaHashtag, FaInfoCircle, FaMoneyBillWave, FaPercent, FaTag, FaTools, FaUser } from 'react-icons/fa';
 
 function formatRp(n) { return `Rp${Number(n || 0).toLocaleString('id-ID')}`; }
@@ -60,6 +62,7 @@ function DiscountsTab() {
   const [error, setError] = useState('');
 
   function load() { setLoading(true); api.get('/discounts').then(({ data }) => setItems(data)).finally(() => setLoading(false)); }
+  const pg = usePagination(items, 10, '');
   useEffect(() => { load(); }, []);
 
   function openAdd() { setEditing(null); setForm(emptyDiscount); setError(''); setModal(true); }
@@ -88,8 +91,8 @@ function DiscountsTab() {
             <thead><tr><th className="w-20"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaTag className="mr-1 inline text-[10px]" aria-hidden /> Nama</th><th><FaBarcode className="mr-1 inline text-[10px]" aria-hidden /> Kode</th><th><FaTag className="mr-1 inline text-[10px]" aria-hidden /> Tipe</th><th><FaPercent className="mr-1 inline text-[10px]" aria-hidden /> Nilai</th><th><FaBullseye className="mr-1 inline text-[10px]" aria-hidden /> Berlaku Untuk</th><th><FaInfoCircle className="mr-1 inline text-[10px]" aria-hidden /> Status</th><th><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
               {items.length === 0 && <tr><td colSpan={8} className="text-center text-slate-400 py-6">Belum ada diskon.</td></tr>}
-              {items.map((d, rowNo) => (
-                <tr key={d.id}><td>{rowNo + 1}</td>
+              {pg.pageItems.map((d, rowNo) => (
+                <tr key={d.id}><td>{pg.start + rowNo + 1}</td>
                   <td>{d.name}</td><td>{d.code || '-'}</td><td>{d.type === 'PERCENTAGE' ? 'Persentase' : 'Nominal'}</td>
                   <td>{d.type === 'PERCENTAGE' ? `${Number(d.value)}%` : formatRp(d.value)}</td>
                   <td>{d.scope}</td><td><StatusBadge status={d.status} /></td>
@@ -102,6 +105,7 @@ function DiscountsTab() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </div>
 
       <Modal open={modal} title={editing ? 'Edit Diskon' : 'Tambah Diskon'} onClose={() => setModal(false)}>
@@ -153,6 +157,7 @@ function ServiceTypesTab() {
   const [error, setError] = useState('');
 
   function load() { setLoading(true); api.get('/service-types').then(({ data }) => setItems(data)).finally(() => setLoading(false)); }
+  const pg = usePagination(items, 10, '');
   useEffect(() => { load(); }, []);
 
   function openAdd() { setEditing(null); setForm(emptyType); setError(''); setModal(true); }
@@ -180,8 +185,8 @@ function ServiceTypesTab() {
             <thead><tr><th className="w-20"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaTools className="mr-1 inline text-[10px]" aria-hidden /> Nama</th><th><FaAlignLeft className="mr-1 inline text-[10px]" aria-hidden /> Deskripsi</th><th><FaMoneyBillWave className="mr-1 inline text-[10px]" aria-hidden /> Estimasi Biaya</th><th><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
               {items.length === 0 && <tr><td colSpan={5} className="text-center text-slate-400 py-6">Belum ada data.</td></tr>}
-              {items.map((t, rowNo) => (
-                <tr key={t.id}><td>{rowNo + 1}</td>
+              {pg.pageItems.map((t, rowNo) => (
+                <tr key={t.id}><td>{pg.start + rowNo + 1}</td>
                   <td>{t.name}</td><td>{t.description || '-'}</td><td>{formatRp(t.estimatedCost)}</td>
                   <td className="text-right space-x-2 whitespace-nowrap">
                     <button className="btn-ghost" onClick={() => openEdit(t)}>Edit</button>
@@ -192,6 +197,7 @@ function ServiceTypesTab() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </div>
 
       <Modal open={modal} title={editing ? 'Edit Jenis Service' : 'Tambah Jenis Service'} onClose={() => setModal(false)}>

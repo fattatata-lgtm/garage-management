@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaPlus, FaTags, FaBoxes, FaCog, FaHashtag, FaLayerGroup, FaCalendarPlus, FaCalendarCheck } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions } from '../../components/ui/RowActions';
 
@@ -25,6 +27,7 @@ export default function CategoryList() {
     setLoading(true);
     api.get('/categories').then(({ data }) => setCategories(data)).finally(() => setLoading(false));
   }
+  const pg = usePagination(categories, 10, '');
   useEffect(() => { load(); }, []);
 
   async function handleDelete(c) {
@@ -44,8 +47,8 @@ export default function CategoryList() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaLayerGroup className="mr-1 inline text-[10px]" aria-hidden /> Nama Kategori</th><th className="num"><FaBoxes className="mr-1 inline text-[10px]" aria-hidden /> Jumlah Sparepart</th><th><FaCalendarPlus className="mr-1 inline text-[10px]" aria-hidden /> Dibuat pada</th><th><FaCalendarCheck className="mr-1 inline text-[10px]" aria-hidden /> Diperbarui pada</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
-              {categories.map((c, rowNo) => (
-                <tr key={c.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((c, rowNo) => (
+                <tr key={c.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>{c.name}</td><td className="num">{c._count?.spareparts ?? 0}</td>
                   <td className="whitespace-nowrap">{formatDateTime(c.createdAt)}</td>
                   <td className="whitespace-nowrap">{formatDateTime(c.updatedAt)}</td>
@@ -56,6 +59,7 @@ export default function CategoryList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

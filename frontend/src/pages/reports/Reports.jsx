@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import Spinner from '../../components/ui/Spinner';
@@ -9,6 +10,8 @@ import DateRangeFilter from '../../components/ui/DateRangeFilter';
 import FilterField from '../../components/ui/FilterField';
 import StatCard from '../../components/ui/StatCard';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { RowActions, ViewAction } from '../../components/ui/RowActions';
 import { FaBoxes, FaCoins, FaCheckCircle, FaClipboardList, FaCog, FaExchangeAlt, FaExclamationTriangle, FaHourglassHalf, FaMoneyBillWave, FaPercent, FaPrint, FaShoppingCart, FaTools, FaTimesCircle, FaCubes, FaReceipt, FaBarcode, FaCalendarAlt, FaCar, FaFileInvoice, FaHashtag, FaInfoCircle, FaLayerGroup, FaListUl, FaUser, FaUserCog } from 'react-icons/fa';
 
@@ -66,12 +69,21 @@ function ReportView({ tab }) {
   }
   useEffect(() => { setReport(null); load(); }, [tab, from, to, categoryId]);
 
+  // Tabel rincian ditampilkan 10 data per halaman. Saat dicetak, SEMUA baris ikut dicetak.
+  const [printing, setPrinting] = useState(false);
+  const pg = usePagination(report?.detail || [], 10, `${tab}|${from}|${to}|${categoryId}`);
+  const rows = printing ? (report?.detail || []) : pg.pageItems;
+  const rowStart = printing ? 0 : pg.start;
+
   function handlePrint() {
+    flushSync(() => setPrinting(true)); // render semua baris dulu sebelum disalin
     const el = document.getElementById('report-area');
-    if (!el) return;
-    const clone = el.cloneNode(true);
-    clone.querySelectorAll('.col-actions').forEach((n) => n.remove());
-    printDocument(`Laporan ${tab}`, `<h2>Laporan ${tab}</h2>${clone.innerHTML}`);
+    if (el) {
+      const clone = el.cloneNode(true);
+      clone.querySelectorAll('.col-actions, .pagination-bar').forEach((n) => n.remove());
+      printDocument(`Laporan ${tab}`, `<h2>Laporan ${tab}</h2>${clone.innerHTML}`);
+    }
+    setPrinting(false);
   }
 
   return (
@@ -107,11 +119,12 @@ function ReportView({ tab }) {
                 <table className="table-base">
                   <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaBarcode className="mr-1 inline text-[10px]" aria-hidden /> Kode</th><th><FaUser className="mr-1 inline text-[10px]" aria-hidden /> Nama</th><th><FaLayerGroup className="mr-1 inline text-[10px]" aria-hidden /> Kategori</th><th className="num"><FaBoxes className="mr-1 inline text-[10px]" aria-hidden /> Stok</th><th className="num"><FaMoneyBillWave className="mr-1 inline text-[10px]" aria-hidden /> Harga Beli</th><th className="num"><FaCoins className="mr-1 inline text-[10px]" aria-hidden /> Nilai Stok</th><th><FaInfoCircle className="mr-1 inline text-[10px]" aria-hidden /> Status</th></tr></thead>
                   <tbody>
-                    {report.detail.map((d, rowNo) => (
-                      <tr key={d.id}><td className="col-no">{rowNo + 1}</td><td>{d.code}</td><td>{d.name}</td><td>{d.category.name}</td><td className="num">{d.stock}</td><td className="num">{formatRp(d.buyPrice)}</td><td className="num">{formatRp(d.stockValue)}</td><td><StatusBadge status={d.status} /></td></tr>
+                    {rows.map((d, rowNo) => (
+                      <tr key={d.id}><td className="col-no">{rowStart + rowNo + 1}</td><td>{d.code}</td><td>{d.name}</td><td>{d.category.name}</td><td className="num">{d.stock}</td><td className="num">{formatRp(d.buyPrice)}</td><td className="num">{formatRp(d.stockValue)}</td><td><StatusBadge status={d.status} /></td></tr>
                     ))}
                   </tbody>
                 </table>
+                <Pagination pg={pg} />
               </ListCard>
             </>
           )}
@@ -128,8 +141,8 @@ function ReportView({ tab }) {
                 <table className="table-base">
                   <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaFileInvoice className="mr-1 inline text-[10px]" aria-hidden /> No. Invoice</th><th><FaCalendarAlt className="mr-1 inline text-[10px]" aria-hidden /> Tanggal</th><th><FaCar className="mr-1 inline text-[10px]" aria-hidden /> Kendaraan</th><th><FaUser className="mr-1 inline text-[10px]" aria-hidden /> Pemilik</th><th><FaUserCog className="mr-1 inline text-[10px]" aria-hidden /> Teknisi</th><th><FaInfoCircle className="mr-1 inline text-[10px]" aria-hidden /> Status</th><th className="num"><FaMoneyBillWave className="mr-1 inline text-[10px]" aria-hidden /> Total</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
                   <tbody>
-                    {report.detail.map((s, rowNo) => (
-                      <tr key={s.id}><td className="col-no">{rowNo + 1}</td>
+                    {rows.map((s, rowNo) => (
+                      <tr key={s.id}><td className="col-no">{rowStart + rowNo + 1}</td>
                         <td><Link to={`/services/${s.id}`} className="cell-link">{s.invoiceNo}</Link></td>
                         <td>{new Date(s.date).toLocaleDateString('id-ID')}</td>
                         <td>{s.vehicle.plateNumber}</td><td>{s.vehicle.customer.name}</td><td>{s.technician.name}</td>
@@ -139,6 +152,7 @@ function ReportView({ tab }) {
                     ))}
                   </tbody>
                 </table>
+                <Pagination pg={pg} />
               </ListCard>
             </>
           )}
@@ -155,8 +169,8 @@ function ReportView({ tab }) {
                 <table className="table-base">
                   <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaFileInvoice className="mr-1 inline text-[10px]" aria-hidden /> No. Invoice</th><th><FaCalendarAlt className="mr-1 inline text-[10px]" aria-hidden /> Tanggal</th><th><FaUser className="mr-1 inline text-[10px]" aria-hidden /> Pelanggan</th><th className="num"><FaListUl className="mr-1 inline text-[10px]" aria-hidden /> Item</th><th className="num"><FaMoneyBillWave className="mr-1 inline text-[10px]" aria-hidden /> Total</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
                   <tbody>
-                    {report.detail.map((s, rowNo) => (
-                      <tr key={s.id}><td className="col-no">{rowNo + 1}</td>
+                    {rows.map((s, rowNo) => (
+                      <tr key={s.id}><td className="col-no">{rowStart + rowNo + 1}</td>
                         <td><Link to={`/sales/${s.id}`} className="cell-link">{s.invoiceNo}</Link></td>
                         <td>{new Date(s.date).toLocaleDateString('id-ID')}</td>
                         <td>{s.customer ? s.customer.name : (s.walkInName || 'Pelanggan Umum')}</td>
@@ -166,6 +180,7 @@ function ReportView({ tab }) {
                     ))}
                   </tbody>
                 </table>
+                <Pagination pg={pg} />
               </ListCard>
             </>
           )}

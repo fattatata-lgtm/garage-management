@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaSearch, FaPlus, FaUsers, FaCar, FaCog, FaEnvelope, FaHashtag, FaMapMarkerAlt, FaPhone, FaUser } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions, ViewAction } from '../../components/ui/RowActions';
 import SearchInput from '../../components/ui/SearchInput';
@@ -53,6 +55,7 @@ export default function CustomerList() {
       .finally(() => setLoading(false));
   }
 
+  const pg = usePagination(customers, 10, q);
   useEffect(() => {
     const t = setTimeout(() => load(q), q ? 350 : 0);
     return () => clearTimeout(t);
@@ -91,9 +94,9 @@ export default function CustomerList() {
               </tr>
             </thead>
             <tbody>
-              {customers.map((c, rowNo) => (
+              {pg.pageItems.map((c, rowNo) => (
                 <tr key={c.id}>
-                  <td className="col-no">{rowNo + 1}</td>
+                  <td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>
                     <Link to={`/customers/${c.id}`} className="cell-link inline-flex items-center gap-2">
                       <CustomerAvatar name={c.name} />
@@ -128,6 +131,7 @@ export default function CustomerList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

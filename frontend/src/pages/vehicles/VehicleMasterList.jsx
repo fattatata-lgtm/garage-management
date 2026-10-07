@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaCarSide, FaPlus, FaCalendarDay, FaCar, FaCircleNotch, FaCog, FaHashtag, FaTag, FaTrademark } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions } from '../../components/ui/RowActions';
 
@@ -16,6 +18,7 @@ export default function VehicleMasterList() {
     setLoading(true);
     api.get('/vehicle-models').then(({ data }) => setModels(data)).finally(() => setLoading(false));
   }
+  const pg = usePagination(models, 10, '');
   useEffect(() => { load(); }, []);
 
   async function handleDelete(m) {
@@ -35,8 +38,8 @@ export default function VehicleMasterList() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaTrademark className="mr-1 inline text-[10px]" aria-hidden /> Merk</th><th><FaCar className="mr-1 inline text-[10px]" aria-hidden /> Model</th><th><FaCalendarDay className="mr-1 inline text-[10px]" aria-hidden /> Tahun</th><th><FaTag className="mr-1 inline text-[10px]" aria-hidden /> Tipe</th><th><FaCircleNotch className="mr-1 inline text-[10px]" aria-hidden /> Jumlah Roda</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
-              {models.map((m, rowNo) => (
-                <tr key={m.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((m, rowNo) => (
+                <tr key={m.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>{m.brand}</td><td>{m.model}</td><td>{m.year}</td><td>{m.type}</td><td>{m.wheels}</td>
                   <td className="col-actions"><RowActions><EditAction to={`/vehicles/master/${m.id}/edit`} />
                     <DeleteAction onClick={() => handleDelete(m)} /></RowActions></td>
@@ -45,6 +48,7 @@ export default function VehicleMasterList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

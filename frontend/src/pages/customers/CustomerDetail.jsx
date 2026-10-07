@@ -23,6 +23,7 @@ export default function CustomerDetail() {
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const svcPg = usePagination(customer?.serviceHistory || [], 10);
+  const vehPg = usePagination(customer?.vehicles || [], 10);
 
   useEffect(() => {
     setLoading(true);
@@ -161,9 +162,9 @@ export default function CustomerDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.vehicles.map((v, rowNo) => (
+                  {vehPg.pageItems.map((v, rowNo) => (
                     <tr key={v.id}>
-                      <td className="col-no">{rowNo + 1}</td>
+                      <td className="col-no">{vehPg.start + rowNo + 1}</td>
                       <td><Link to={`/vehicles/${v.id}`} className="cell-link">{v.plateNumber}</Link></td>
                       <td>{v.vehicleModel.brand}</td>
                       <td>{v.vehicleModel.model}</td>
@@ -178,6 +179,7 @@ export default function CustomerDetail() {
                 </tbody>
               </table>
             )}
+            <Pagination pg={vehPg} />
           </ListCard>
 
           {/* Riwayat Service */}

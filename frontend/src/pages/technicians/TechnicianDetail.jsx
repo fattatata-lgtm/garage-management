@@ -29,6 +29,7 @@ export default function TechnicianDetail() {
   const [technician, setTechnician] = useState(null);
   const [loading, setLoading] = useState(true);
   const svcPg = usePagination(technician?.services || [], 10);
+  const schPg = usePagination(technician?.schedules || [], 10);
 
   function load() {
     setLoading(true);
@@ -123,9 +124,9 @@ export default function TechnicianDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {technician.schedules.map((s, rowNo) => (
+                  {schPg.pageItems.map((s, rowNo) => (
                     <tr key={s.id}>
-                      <td className="col-no">{rowNo + 1}</td>
+                      <td className="col-no">{schPg.start + rowNo + 1}</td>
                       <td>{fmtDate(s.date)}</td>
                       <td>{s.note || '-'}</td>
                       <td className="col-actions">
@@ -139,6 +140,7 @@ export default function TechnicianDetail() {
                 </tbody>
               </table>
             )}
+            <Pagination pg={schPg} />
           </ListCard>
 
           <ListCard title="Riwayat Service" icon={FaHistory}>

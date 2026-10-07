@@ -8,6 +8,8 @@ import EmptyState from '../components/ui/EmptyState';
 import StatusBadge from '../components/ui/StatusBadge';
 import PageHeader from '../components/ui/PageHeader';
 import ListCard from '../components/ui/ListCard';
+import usePagination from '../hooks/usePagination';
+import Pagination from '../components/ui/Pagination';
 import StatCard from '../components/ui/StatCard';
 import Alert from '../components/ui/Alert';
 
@@ -30,6 +32,15 @@ export default function Dashboard() {
   const [period, setPeriod] = useState('day');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Stok menipis diurutkan: HABIS dulu, lalu RENDAH, lalu stok paling sedikit. Maksimal 10 data per halaman.
+  const lowStockSorted = [...(data?.lowStockAlerts || [])].sort((a, b) => {
+    if (a.status === 'HABIS' && b.status !== 'HABIS') return -1;
+    if (a.status !== 'HABIS' && b.status === 'HABIS') return 1;
+    return a.stock - b.stock;
+  });
+  const stockPg = usePagination(lowStockSorted, 10, period);
+  const recentPg = usePagination(data?.recentServices || [], 10, period);
 
   useEffect(() => {
     setLoading(true);
@@ -125,16 +136,9 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {data.lowStockAlerts
-                .sort((a, b) => {
-                  // Urutkan: HABIS dulu, lalu RENDAH, lalu berdasarkan stok ascending
-                  if (a.status === 'HABIS' && b.status !== 'HABIS') return -1;
-                  if (a.status !== 'HABIS' && b.status === 'HABIS') return 1;
-                  return a.stock - b.stock;
-                })
-                .map((sp, rowNo) => (
+              {stockPg.pageItems.map((sp, rowNo) => (
                   <tr key={sp.id}>
-                    <td className="col-no">{rowNo + 1}</td>
+                    <td className="col-no">{stockPg.start + rowNo + 1}</td>
                     <td className="font-mono text-xs text-slate-500">{sp.code}</td>
                     <td>
                       {isTeknisi ? (
@@ -176,6 +180,7 @@ export default function Dashboard() {
                 ))}
             </tbody>
           </table>
+          <Pagination pg={stockPg} />
 
           {/* Footer ringkasan */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/80 px-5 py-3 text-xs text-slate-500">
@@ -214,9 +219,9 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {data.recentServices.map((s, rowNo) => (
+              {recentPg.pageItems.map((s, rowNo) => (
                 <tr key={s.id}>
-                  <td className="col-no">{rowNo + 1}</td>
+                  <td className="col-no">{recentPg.start + rowNo + 1}</td>
                   <td><Link to={`/services/${s.id}`} className="cell-link">{s.invoiceNo}</Link></td>
                   <td>{s.vehicle.plateNumber}</td>
                   <td>{s.vehicle.customer.name}</td>
@@ -228,6 +233,7 @@ export default function Dashboard() {
             </tbody>
           </table>
         )}
+        <Pagination pg={recentPg} />
       </ListCard>
     </div>
   );

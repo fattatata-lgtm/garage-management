@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaKey, FaPlus, FaCog, FaEnvelope, FaHashtag, FaUserCircle, FaUserShield, FaCalendarAlt } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions } from '../../components/ui/RowActions';
 
@@ -62,6 +64,7 @@ export default function UserList() {
     setLoading(true);
     api.get('/users').then(({ data }) => setUsers(data)).finally(() => setLoading(false));
   }
+  const pg = usePagination(users, 10, '');
   useEffect(() => { load(); }, []);
 
   async function handleDelete(u) {
@@ -90,9 +93,9 @@ export default function UserList() {
               </tr>
             </thead>
             <tbody>
-              {users.map((u, rowNo) => (
+              {pg.pageItems.map((u, rowNo) => (
                 <tr key={u.id}>
-                  <td className="col-no">{rowNo + 1}</td>
+                  <td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>
                     <span className="inline-flex items-center gap-2 font-medium">
                       <UserAvatar name={u.username} />
@@ -113,6 +116,7 @@ export default function UserList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

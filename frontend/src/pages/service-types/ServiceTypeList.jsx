@@ -5,6 +5,8 @@ import Spinner from '../../components/ui/Spinner';
 import EmptyState from '../../components/ui/EmptyState';
 import PageHeader from '../../components/ui/PageHeader';
 import ListCard from '../../components/ui/ListCard';
+import usePagination from '../../hooks/usePagination';
+import Pagination from '../../components/ui/Pagination';
 import { FaClipboardList, FaPlus, FaAlignLeft, FaCog, FaHashtag, FaMoneyBillWave, FaTools } from 'react-icons/fa';
 import { DeleteAction, EditAction, RowActions } from '../../components/ui/RowActions';
 
@@ -19,6 +21,7 @@ export default function ServiceTypeList() {
     setLoading(true);
     api.get('/service-types').then(({ data }) => setItems(data)).finally(() => setLoading(false));
   }
+  const pg = usePagination(items, 10, '');
   useEffect(() => { load(); }, []);
 
   async function handleDelete(t) {
@@ -38,8 +41,8 @@ export default function ServiceTypeList() {
           <table className="table-base">
             <thead><tr><th className="col-no"><FaHashtag className="mr-1 inline text-[10px]" aria-hidden /> No</th><th><FaTools className="mr-1 inline text-[10px]" aria-hidden /> Nama</th><th><FaAlignLeft className="mr-1 inline text-[10px]" aria-hidden /> Deskripsi</th><th className="num"><FaMoneyBillWave className="mr-1 inline text-[10px]" aria-hidden /> Estimasi Biaya</th><th className="col-actions"><FaCog className="mr-1 inline text-[10px]" aria-hidden /> Aksi</th></tr></thead>
             <tbody>
-              {items.map((t, rowNo) => (
-                <tr key={t.id}><td className="col-no">{rowNo + 1}</td>
+              {pg.pageItems.map((t, rowNo) => (
+                <tr key={t.id}><td className="col-no">{pg.start + rowNo + 1}</td>
                   <td>{t.name}</td><td>{t.description || '-'}</td><td className="num">{formatRp(t.estimatedCost)}</td>
                   <td className="col-actions"><RowActions><EditAction to={`/service-types/${t.id}/edit`} />
                     <DeleteAction onClick={() => handleDelete(t)} /></RowActions></td>
@@ -48,6 +51,7 @@ export default function ServiceTypeList() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );

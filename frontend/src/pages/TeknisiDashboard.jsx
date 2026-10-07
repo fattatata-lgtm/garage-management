@@ -10,6 +10,8 @@ import EmptyState from '../components/ui/EmptyState';
 import StatusBadge from '../components/ui/StatusBadge';
 import PageHeader from '../components/ui/PageHeader';
 import ListCard from '../components/ui/ListCard';
+import usePagination from '../hooks/usePagination';
+import Pagination from '../components/ui/Pagination';
 import StatCard from '../components/ui/StatCard';
 
 const PERIODS = [
@@ -26,6 +28,7 @@ export default function TeknisiDashboard() {
   const [period, setPeriod] = useState('day');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const pg = usePagination(data?.recentServices || [], 10, period);
 
   useEffect(() => {
     setLoading(true);
@@ -89,9 +92,9 @@ export default function TeknisiDashboard() {
               </tr>
             </thead>
             <tbody>
-              {data.recentServices.map((s, i) => (
+              {pg.pageItems.map((s, i) => (
                 <tr key={s.id}>
-                  <td className="col-no">{i + 1}</td>
+                  <td className="col-no">{pg.start + i + 1}</td>
                   <td><Link to={`/services/${s.id}`} className="cell-link">{s.invoiceNo}</Link></td>
                   <td>{fmtDate(s.date)}</td>
                   <td>{s.vehicle.plateNumber}</td>
@@ -103,6 +106,7 @@ export default function TeknisiDashboard() {
             </tbody>
           </table>
         )}
+        <Pagination pg={pg} />
       </ListCard>
     </div>
   );
