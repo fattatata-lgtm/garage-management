@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api/axios';
 import Spinner from '../../components/ui/Spinner';
 import FormPage from '../../components/ui/FormPage';
+import SparepartPicker from '../../components/ui/SparepartPicker';
 import useForm, { errMsg } from '../../hooks/useForm';
 
 import { FaBoxes } from 'react-icons/fa';
@@ -11,7 +12,7 @@ export default function StockMoveForm({ direction = 'MASUK' }) {
   const isIn = direction === 'MASUK';
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { form, bind, reset } = useForm({ sparepartId: searchParams.get('sparepartId') || '', quantity: '', note: '' });
+  const { form, setForm, bind, reset } = useForm({ sparepartId: searchParams.get('sparepartId') || '', quantity: '', note: '' });
   const [spareparts, setSpareparts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -24,7 +25,10 @@ export default function StockMoveForm({ direction = 'MASUK' }) {
   const selected = spareparts.find((s) => String(s.id) === String(form.sparepartId));
 
   async function submit(e) {
-    e.preventDefault(); setSaving(true); setError('');
+    e.preventDefault(); setError('');
+    // SparepartPicker bukan <select required>, jadi validasi dilakukan manual
+    if (!form.sparepartId) { setError('Pilih sparepart terlebih dahulu.'); return; }
+    setSaving(true);
     try {
       await api.post(`/spareparts/${form.sparepartId}/stock-move`, { direction, quantity: form.quantity, note: form.note });
       navigate('/spareparts/stock-history');
@@ -59,10 +63,11 @@ export default function StockMoveForm({ direction = 'MASUK' }) {
     >
       <div>
         <label className="label">Sparepart *</label>
-        <select className="input" required value={form.sparepartId} onChange={bind('sparepartId')}>
-          <option value="">-- Pilih Sparepart --</option>
-          {spareparts.map((s) => <option key={s.id} value={s.id}>{s.code} - {s.name}</option>)}
-        </select>
+        <SparepartPicker
+          options={spareparts}
+          value={form.sparepartId}
+          onPick={(sp) => setForm((f) => ({ ...f, sparepartId: String(sp.id) }))}
+        />
         {selected && <p className="text-xs text-slate-400 mt-1">Stok tersedia saat ini: {selected.stock}</p>}
       </div>
       <div><label className="label">Jumlah *</label><input type="number" min="1" className="input" required value={form.quantity} onChange={bind('quantity')} /></div>
