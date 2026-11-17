@@ -6,5 +6,7 @@ router.use(authenticate, authorize('ADMIN', 'STAFF'));
 router.get('/stock', ctrl.stockReport);
 router.get('/service', ctrl.serviceReport);
 router.get('/sales', ctrl.salesReport);
+router.get('/sparepart', ctrl.sparepartReport);
+router.get('/loyalty', ctrl.loyaltyReport);
 
 module.exports = router;

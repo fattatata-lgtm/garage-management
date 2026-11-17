@@ -7,7 +7,8 @@ import useForm, { errMsg } from '../../hooks/useForm';
 import ScanButton from '../../components/ui/ScanButton';
 
 import { FaCogs } from 'react-icons/fa';
-const empty = { code: '', name: '', categoryId: '', buyPrice: '', sellPrice: '', stock: 0, lowStockThreshold: 5 };
+import SearchSelect from '../../components/ui/SearchSelect';
+const empty = { code: '', name: '', categoryId: '', supplierId: '', buyPrice: '', sellPrice: '', stock: 0, lowStockThreshold: 5 };
 
 // Halaman Tambah (/spareparts/new) dan Edit (/spareparts/:id/edit) sparepart
 export default function SparepartForm() {
@@ -16,19 +17,21 @@ export default function SparepartForm() {
   const navigate = useNavigate();
   const { form, setForm, bind, load, reset } = useForm(empty);
   const [categories, setCategories] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const reqs = [api.get('/categories')];
+    const reqs = [api.get('/categories'), api.get('/suppliers')];
     if (editing) reqs.push(api.get(`/spareparts/${id}`));
     Promise.all(reqs)
-      .then(([c, sp]) => {
+      .then(([c, sup, sp]) => {
         setCategories(c.data);
+        setSuppliers(sup.data);
         if (sp) {
           const d = sp.data;
-          load({ code: d.code, name: d.name, categoryId: d.categoryId, buyPrice: d.buyPrice, sellPrice: d.sellPrice, stock: d.stock, lowStockThreshold: d.lowStockThreshold });
+          load({ code: d.code, name: d.name, categoryId: d.categoryId, supplierId: d.supplierId || '', buyPrice: d.buyPrice, sellPrice: d.sellPrice, stock: d.stock, lowStockThreshold: d.lowStockThreshold });
         }
       })
       .catch(() => setError('Gagal memuat data.'))
@@ -75,10 +78,17 @@ export default function SparepartForm() {
         <div><label className="label">Harga Beli *</label><input type="number" min="0" className="input" required value={form.buyPrice} onChange={bind('buyPrice')} /></div>
         <div>
           <label className="label">Kategori *</label>
-          <select className="input" required value={form.categoryId} onChange={bind('categoryId')}>
+          <SearchSelect required value={form.categoryId} onChange={bind('categoryId')}>
             <option value="">-- Pilih Kategori --</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          </SearchSelect>
+        </div>
+        <div>
+          <label className="label">Supplier</label>
+          <SearchSelect value={form.supplierId} onChange={bind('supplierId')}>
+            <option value="">-- Tanpa Supplier --</option>
+            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </SearchSelect>
         </div>
         <div><label className="label">Harga Jual *</label><input type="number" min="0" className="input" required value={form.sellPrice} onChange={bind('sellPrice')} /></div>
         <div><label className="label">Ambang Stok Rendah</label><input type="number" min="0" className="input" value={form.lowStockThreshold} onChange={bind('lowStockThreshold')} /></div>

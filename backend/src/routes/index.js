@@ -6,6 +6,7 @@ router.use('/customers', require('./customer.routes'));
 router.use('/vehicle-models', require('./vehicleModel.routes'));
 router.use('/vehicles', require('./vehicle.routes'));
 router.use('/categories', require('./category.routes'));
+router.use('/suppliers', require('./supplier.routes'));
 router.use('/spareparts', require('./sparepart.routes'));
 router.use('/technicians', require('./technician.routes'));
 router.use('/service-types', require('./serviceType.routes'));

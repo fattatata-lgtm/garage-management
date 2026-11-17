@@ -6,6 +6,7 @@ import FormPage from '../../components/ui/FormPage';
 import useForm, { errMsg } from '../../hooks/useForm';
 
 import { FaCar, FaInfoCircle } from 'react-icons/fa';
+import SearchSelect from '../../components/ui/SearchSelect';
 const empty = { customerId: '', vehicleModelId: '', plateNumber: '', vin: '', engineNumber: '', color: '', purchaseYear: '', note: '' };
 
 // Halaman Tambah (/vehicles/new, bisa dengan ?addFor=<customerId>) dan Edit (/vehicles/:id/edit)
@@ -69,17 +70,17 @@ export default function VehicleForm() {
           <h3 className="flex items-center gap-2 font-semibold text-slate-800"><FaCar className="text-brand-500" aria-hidden /> Informasi Kendaraan</h3>
           <div>
             <label className="label">Pemilik Kendaraan *</label>
-            <select className="input" required value={form.customerId} onChange={bind('customerId')}>
+            <SearchSelect required value={form.customerId} onChange={bind('customerId')}>
               <option value="">-- Pilih Pelanggan --</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
-            </select>
+            </SearchSelect>
           </div>
           <div>
             <label className="label">Jenis Kendaraan *</label>
-            <select className="input" required value={form.vehicleModelId} onChange={bind('vehicleModelId')}>
+            <SearchSelect required value={form.vehicleModelId} onChange={bind('vehicleModelId')}>
               <option value="">-- Pilih Jenis (merk, model, tahun) --</option>
               {models.map((m) => <option key={m.id} value={m.id}>{m.brand} {m.model} ({m.year})</option>)}
-            </select>
+            </SearchSelect>
           </div>
           <div>
             <label className="label">Nomor Plat *</label>

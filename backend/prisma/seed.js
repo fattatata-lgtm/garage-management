@@ -10,6 +10,7 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const { categories, spareparts } = require('./seed-data/spareparts');
+const { suppliers, supplierByCategory } = require('./seed-data/suppliers');
 const { serviceTypes } = require('./seed-data/services');
 const { vehicleModels } = require('./seed-data/vehicles');
 const { technicians, customers, discounts } = require('./seed-data/people');
@@ -31,6 +32,7 @@ async function resetData() {
   await prisma.salesTransaction.deleteMany();
   await prisma.stockHistory.deleteMany();
   await prisma.sparepart.deleteMany();
+  await prisma.supplier.deleteMany();
   await prisma.category.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.vehicleModel.deleteMany();
@@ -61,10 +63,14 @@ async function seedUsersAndSettings() {
     { username: 'teknisi1', email: 'teknisi1@selfautomotive.test', pass: 'teknisi123', role: 'TEKNISI' },
   ];
   for (const u of users) {
-    await prisma.user.upsert({
-      where: { username: u.username },
-      update: {},
-      create: { username: u.username, email: u.email, password: await bcrypt.hash(u.pass, 10), role: u.role },
+    // Cari berdasarkan username ATAU email, supaya akun lama yang sudah diganti username-nya
+    // tidak bikin seed gagal (unique constraint) dan akun yang sudah ada tidak diubah.
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ username: u.username }, { email: u.email }] },
+    });
+    if (existing) continue;
+    await prisma.user.create({
+      data: { username: u.username, email: u.email, password: await bcrypt.hash(u.pass, 10), role: u.role },
     });
   }
 }
@@ -87,30 +93,48 @@ async function seedTechnicians() {
   console.log(`  Teknisi        : ${technicians.length}`);
 }
 
-async function seedCategoriesAndSpareparts() {
+async function seedSuppliers() {
+  const byName = {};
+  for (const sp of suppliers) {
+    let row = await prisma.supplier.findFirst({ where: { name: sp.name } });
+    if (row) row = await prisma.supplier.update({ where: { id: row.id }, data: sp });
+    else row = await prisma.supplier.create({ data: sp });
+    byName[sp.name] = row.id;
+  }
+  console.log(`  Supplier       : ${suppliers.length}`);
+  return byName;
+}
+
+async function seedCategoriesAndSpareparts(supplierId) {
   const catId = {};
   for (const name of categories) {
     const c = await prisma.category.upsert({ where: { name }, update: {}, create: { name } });
     catId[name] = c.id;
   }
 
+  const supplierOf = (cat) => supplierId[supplierByCategory[cat]] || null;
+
   let created = 0, updated = 0;
   for (const [code, name, cat, buyPrice, sellPrice, stock, lowStockThreshold] of spareparts) {
     const existing = await prisma.sparepart.findUnique({ where: { code } });
     if (existing) {
-      // Perbarui nama/kategori/harga, TAPI jangan ubah stok yang sudah berjalan
+      // Perbarui nama/kategori/harga, TAPI jangan ubah stok yang sudah berjalan.
+      // Supplier hanya diisi bila belum ada (pilihan manual di aplikasi tidak ditimpa).
       await prisma.sparepart.update({
         where: { code },
-        data: { name, categoryId: catId[cat], buyPrice, sellPrice, lowStockThreshold },
+        data: {
+          name, categoryId: catId[cat], buyPrice, sellPrice, lowStockThreshold,
+          ...(existing.supplierId ? {} : { supplierId: supplierOf(cat) }),
+        },
       });
       updated++;
     } else {
       const sp = await prisma.sparepart.create({
-        data: { code, name, categoryId: catId[cat], buyPrice, sellPrice, stock, lowStockThreshold },
+        data: { code, name, categoryId: catId[cat], supplierId: supplierOf(cat), buyPrice, sellPrice, stock, lowStockThreshold },
       });
       if (stock > 0) {
         await prisma.stockHistory.create({
-          data: { sparepartId: sp.id, direction: 'MASUK', source: 'MANUAL', quantity: stock, note: 'Stok awal' },
+          data: { sparepartId: sp.id, supplierId: supplierOf(cat), direction: 'MASUK', source: 'MANUAL', quantity: stock, note: 'Stok awal' },
         });
       }
       created++;
@@ -185,7 +209,8 @@ async function main() {
 
   await seedUsersAndSettings();
   await seedTechnicians();
-  await seedCategoriesAndSpareparts();
+  const supplierId = await seedSuppliers();
+  await seedCategoriesAndSpareparts(supplierId);
   await seedServiceTypes();
   const modelId = await seedVehicleModels();
   await seedCustomersAndVehicles(modelId);

@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { categories, spareparts } = require('./seed-data/spareparts');
+const { suppliers, supplierByCategory } = require('./seed-data/suppliers');
 const { serviceTypes } = require('./seed-data/services');
 const { vehicleModels } = require('./seed-data/vehicles');
 const { technicians, customers, discounts } = require('./seed-data/people');
@@ -13,7 +14,7 @@ const rows = (arr) => arr.map((r) => `  (${r.map(q).join(', ')})`).join(',\n');
 
 const out = [];
 out.push(`-- =============================================================================
--- Garage Management - Data Master (sparepart, layanan, kendaraan, teknisi, pelanggan, diskon)
+-- Garage Management - Data Master (supplier, sparepart, layanan, kendaraan, teknisi, pelanggan, diskon)
 -- DIBUAT OTOMATIS dari backend/prisma/seed-data/ lewat: node backend/prisma/export-sql.js
 --
 -- Cara impor (setelah struktur tabel ada / garage_management.sql sudah diimpor):
@@ -31,7 +32,7 @@ out.push(`-- ===================================================================
 -- UPDATE "User" SET "technicianId" = NULL;
 -- DELETE FROM "ServiceLog"; DELETE FROM "ServiceSparepart"; DELETE FROM "ServiceDetail"; DELETE FROM "ServiceTransaction";
 -- DELETE FROM "SalesItem"; DELETE FROM "SalesTransaction"; DELETE FROM "StockHistory";
--- DELETE FROM "Sparepart"; DELETE FROM "Category"; DELETE FROM "Vehicle"; DELETE FROM "VehicleModel";
+-- DELETE FROM "Sparepart"; DELETE FROM "Supplier"; DELETE FROM "Category"; DELETE FROM "Vehicle"; DELETE FROM "VehicleModel";
 -- DELETE FROM "Customer"; DELETE FROM "TechnicianSchedule"; DELETE FROM "Technician";
 -- DELETE FROM "ServiceType"; DELETE FROM "Discount";
 -- COMMIT;
@@ -59,29 +60,45 @@ WHERE username = 'teknisi1' AND "technicianId" IS NULL
   AND NOT EXISTS (SELECT 1 FROM "User" u2 WHERE u2."technicianId" = (SELECT id FROM "Technician" WHERE name = ${q(technicians[0].name)} ORDER BY id LIMIT 1));
 `);
 
-// Kategori + sparepart
+// Supplier + kategori + sparepart
+const supRows = rows(suppliers.map((s) => [s.name, s.contactPerson, s.phone, s.email, s.address, s.note]));
+out.push(`-- Supplier (${suppliers.length})
+UPDATE "Supplier" t SET "contactPerson" = v.contact, phone = v.phone, email = v.email, address = v.address, note = v.note, "updatedAt" = CURRENT_TIMESTAMP
+FROM (VALUES
+${supRows}
+) AS v(name, contact, phone, email, address, note) WHERE t.name = v.name;
+
+INSERT INTO "Supplier" (name, "contactPerson", phone, email, address, note, "updatedAt")
+SELECT v.name, v.contact, v.phone, v.email, v.address, v.note, CURRENT_TIMESTAMP
+FROM (VALUES
+${supRows}
+) AS v(name, contact, phone, email, address, note)
+WHERE NOT EXISTS (SELECT 1 FROM "Supplier" t WHERE t.name = v.name);
+`);
+
 out.push(`-- Kategori (${categories.length})
 INSERT INTO "Category" (name, "updatedAt") VALUES
 ${categories.map((c) => `  (${q(c)}, CURRENT_TIMESTAMP)`).join(',\n')}
 ON CONFLICT (name) DO NOTHING;
 `);
 
-const spRows = rows(spareparts);
-out.push(`-- Sparepart (${spareparts.length})
-INSERT INTO "Sparepart" (code, name, "categoryId", "buyPrice", "sellPrice", stock, "lowStockThreshold", "updatedAt")
-SELECT v.code, v.name, c.id, v.buy, v.sell, v.stock, v.low, CURRENT_TIMESTAMP
+const spRows = rows(spareparts.map((s) => [...s, supplierByCategory[s[2]] || null]));
+out.push(`-- Sparepart (${spareparts.length}) + supplier utama per kategori
+INSERT INTO "Sparepart" (code, name, "categoryId", "supplierId", "buyPrice", "sellPrice", stock, "lowStockThreshold", "updatedAt")
+SELECT v.code, v.name, c.id, (SELECT MIN(sp.id) FROM "Supplier" sp WHERE sp.name = v.sup), v.buy, v.sell, v.stock, v.low, CURRENT_TIMESTAMP
 FROM (VALUES
 ${spRows}
-) AS v(code, name, cat, buy, sell, stock, low)
+) AS v(code, name, cat, buy, sell, stock, low, sup)
 JOIN "Category" c ON c.name = v.cat
 ON CONFLICT (code) DO UPDATE SET
   name = EXCLUDED.name, "categoryId" = EXCLUDED."categoryId",
+  "supplierId" = COALESCE("Sparepart"."supplierId", EXCLUDED."supplierId"),
   "buyPrice" = EXCLUDED."buyPrice", "sellPrice" = EXCLUDED."sellPrice",
   "lowStockThreshold" = EXCLUDED."lowStockThreshold", "updatedAt" = CURRENT_TIMESTAMP;
 
 -- Riwayat stok awal (hanya untuk sparepart yang belum punya riwayat)
-INSERT INTO "StockHistory" ("sparepartId", direction, source, quantity, note)
-SELECT s.id, 'MASUK'::"StockDirection", 'MANUAL'::"StockSource", s.stock, 'Stok awal'
+INSERT INTO "StockHistory" ("sparepartId", "supplierId", direction, source, quantity, note)
+SELECT s.id, s."supplierId", 'MASUK'::"StockDirection", 'MANUAL'::"StockSource", s.stock, 'Stok awal'
 FROM "Sparepart" s
 WHERE s.code IN (${spareparts.map((s) => q(s[0])).join(', ')})
   AND s.stock > 0

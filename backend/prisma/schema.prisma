@@ -124,12 +124,30 @@ model Category {
   @@index([name])
 }
 
+model Supplier {
+  id            Int            @id @default(autoincrement())
+  name          String
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?
+  note          String?
+  spareparts    Sparepart[]
+  stockHistory  StockHistory[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([name])
+}
+
 model Sparepart {
   id                Int                @id @default(autoincrement())
   code              String             @unique
   name              String
   categoryId        Int
   category          Category           @relation(fields: [categoryId], references: [id])
+  supplierId        Int?
+  supplier          Supplier?          @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   buyPrice          Decimal            @db.Decimal(14, 2)
   sellPrice         Decimal            @db.Decimal(14, 2)
   stock             Int                @default(0)
@@ -142,12 +160,16 @@ model Sparepart {
 
   @@index([code])
   @@index([categoryId])
+  @@index([supplierId])
 }
 
 model StockHistory {
   id           Int            @id @default(autoincrement())
   sparepartId  Int
   sparepart    Sparepart      @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  // Supplier asal barang (diisi untuk stok MASUK manual, opsional)
+  supplierId   Int?
+  supplier     Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   direction    StockDirection
   source       StockSource    @default(MANUAL)
   quantity     Int
@@ -156,6 +178,7 @@ model StockHistory {
   createdAt    DateTime       @default(now())
 
   @@index([sparepartId])
+  @@index([supplierId])
   @@index([createdAt])
 }
 

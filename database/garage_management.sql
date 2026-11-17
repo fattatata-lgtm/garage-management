@@ -9,7 +9,7 @@
 -- PENTING: ganti password akun demo setelah login pertama di server produksi.
 --
 -- Struktur ini setara dengan seluruh migrasi Prisma di backend/prisma/migrations
--- (sampai 20261002120000_printer_connection).
+-- (sampai 20261022120000_add_supplier).
 -- =============================================================================
 
 --
@@ -1652,3 +1652,39 @@ ALTER TABLE ONLY public."Vehicle"
 --
 
 
+--
+-- Migrasi 20261022120000_add_supplier: tabel Supplier + kolom supplierId
+-- (aman dijalankan berulang)
+--
+
+CREATE TABLE IF NOT EXISTS public."Supplier" (
+    id SERIAL NOT NULL,
+    name text NOT NULL,
+    "contactPerson" text,
+    phone text,
+    email text,
+    address text,
+    note text,
+    "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    "updatedAt" timestamp(3) without time zone NOT NULL,
+    CONSTRAINT "Supplier_pkey" PRIMARY KEY (id)
+);
+
+ALTER TABLE public."Sparepart" ADD COLUMN IF NOT EXISTS "supplierId" integer;
+ALTER TABLE public."StockHistory" ADD COLUMN IF NOT EXISTS "supplierId" integer;
+
+CREATE INDEX IF NOT EXISTS "Supplier_name_idx" ON public."Supplier" USING btree (name);
+CREATE INDEX IF NOT EXISTS "Sparepart_supplierId_idx" ON public."Sparepart" USING btree ("supplierId");
+CREATE INDEX IF NOT EXISTS "StockHistory_supplierId_idx" ON public."StockHistory" USING btree ("supplierId");
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Sparepart_supplierId_fkey') THEN
+    ALTER TABLE public."Sparepart" ADD CONSTRAINT "Sparepart_supplierId_fkey"
+      FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'StockHistory_supplierId_fkey') THEN
+    ALTER TABLE public."StockHistory" ADD CONSTRAINT "StockHistory_supplierId_fkey"
+      FOREIGN KEY ("supplierId") REFERENCES public."Supplier"(id) ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;

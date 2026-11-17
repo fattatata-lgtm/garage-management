@@ -7,7 +7,7 @@ function withStatus(sp) {
 
 async function list(req, res, next) {
   try {
-    const { q, categoryId } = req.query;
+    const { q, categoryId, supplierId, stockStatus: statusFilter } = req.query;
     const where = {
       AND: [
         q ? { OR: [
@@ -15,14 +15,21 @@ async function list(req, res, next) {
               { code: { contains: q, mode: 'insensitive' } },
             ] } : {},
         categoryId ? { categoryId: Number(categoryId) } : {},
+        supplierId ? { supplierId: Number(supplierId) } : {},
       ],
     };
     const spareparts = await prisma.sparepart.findMany({
       where,
-      include: { category: true },
+      include: { category: true, supplier: true },
       orderBy: { name: 'asc' },
     });
-    res.json(spareparts.map(withStatus));
+    let result = spareparts.map(withStatus);
+    // Filter status stok: RENDAH (menipis) / HABIS / BAIK. Dihitung di sini karena batas stok menipis
+    // berbeda per sparepart (lowStockThreshold), sehingga tidak bisa dibandingkan langsung lewat query Prisma.
+    if (['RENDAH', 'HABIS', 'BAIK'].includes(statusFilter)) {
+      result = result.filter((sp) => sp.status === statusFilter);
+    }
+    res.json(result);
   } catch (err) { next(err); }
 }
 
@@ -33,7 +40,8 @@ async function detail(req, res, next) {
       where: { id },
       include: {
         category: true,
-        stockHistory: { orderBy: { createdAt: 'desc' }, take: 100 },
+        supplier: true,
+        stockHistory: { orderBy: { createdAt: 'desc' }, take: 100, include: { supplier: true } },
       },
     });
     if (!sparepart) return res.status(404).json({ message: 'Sparepart tidak ditemukan.' });
@@ -43,7 +51,7 @@ async function detail(req, res, next) {
 
 async function create(req, res, next) {
   try {
-    const { code, name, categoryId, buyPrice, sellPrice, stock, lowStockThreshold } = req.body;
+    const { code, name, categoryId, supplierId, buyPrice, sellPrice, stock, lowStockThreshold } = req.body;
     if (!code || !name || !categoryId || buyPrice == null || sellPrice == null) {
       return res.status(400).json({ message: 'Kode, nama, kategori, harga beli, dan harga jual wajib diisi.' });
     }
@@ -51,6 +59,7 @@ async function create(req, res, next) {
       data: {
         code, name,
         categoryId: Number(categoryId),
+        supplierId: supplierId ? Number(supplierId) : null,
         buyPrice: Number(buyPrice),
         sellPrice: Number(sellPrice),
         stock: stock ? Number(stock) : 0,
@@ -64,12 +73,14 @@ async function create(req, res, next) {
 async function update(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const { code, name, categoryId, buyPrice, sellPrice, lowStockThreshold } = req.body;
+    const { code, name, categoryId, supplierId, buyPrice, sellPrice, lowStockThreshold } = req.body;
     const sparepart = await prisma.sparepart.update({
       where: { id },
       data: {
         code, name,
         categoryId: categoryId ? Number(categoryId) : undefined,
+        // supplierId '' / null = lepas supplier; undefined = tidak diubah
+        supplierId: supplierId === undefined ? undefined : (supplierId ? Number(supplierId) : null),
         buyPrice: buyPrice != null ? Number(buyPrice) : undefined,
         sellPrice: sellPrice != null ? Number(sellPrice) : undefined,
         lowStockThreshold: lowStockThreshold != null ? Number(lowStockThreshold) : undefined,
@@ -91,7 +102,7 @@ async function remove(req, res, next) {
 async function stockMove(req, res, next) {
   try {
     const id = Number(req.params.id);
-    const { direction, quantity, note } = req.body; // direction: MASUK | KELUAR
+    const { direction, quantity, note, supplierId } = req.body; // direction: MASUK | KELUAR
     const qty = Number(quantity);
 
     if (!['MASUK', 'KELUAR'].includes(direction) || !qty || qty <= 0) {
@@ -110,7 +121,11 @@ async function stockMove(req, res, next) {
 
       const updated = await tx.sparepart.update({ where: { id }, data: { stock: newStock } });
       await tx.stockHistory.create({
-        data: { sparepartId: id, direction, source: 'MANUAL', quantity: qty, note },
+        data: {
+          sparepartId: id, direction, source: 'MANUAL', quantity: qty, note,
+          // Supplier hanya relevan untuk barang masuk
+          supplierId: direction === 'MASUK' && supplierId ? Number(supplierId) : null,
+        },
       });
       return updated;
     });
@@ -131,7 +146,7 @@ async function history(req, res, next) {
     };
     const history = await prisma.stockHistory.findMany({
       where,
-      include: { sparepart: true },
+      include: { sparepart: true, supplier: true },
       orderBy: { createdAt: 'desc' },
       take: 500,
     });

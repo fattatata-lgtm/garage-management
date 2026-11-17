@@ -2,14 +2,20 @@ const prisma = require('../lib/prisma');
 
 async function list(req, res, next) {
   try {
-    const { q } = req.query;
-    const where = q
-      ? { OR: [
-          { plateNumber: { contains: q, mode: 'insensitive' } },
-          { vin: { contains: q, mode: 'insensitive' } },
-          { customer: { name: { contains: q, mode: 'insensitive' } } },
-        ] }
-      : {};
+    const { q, brand, model, wheels } = req.query;
+    const and = [];
+    if (q) {
+      and.push({ OR: [
+        { plateNumber: { contains: q, mode: 'insensitive' } },
+        { vin: { contains: q, mode: 'insensitive' } },
+        { customer: { name: { contains: q, mode: 'insensitive' } } },
+      ] });
+    }
+    // Filter merk, model, dan jumlah roda ada di master kendaraan (vehicleModel)
+    if (brand) and.push({ vehicleModel: { brand: { equals: String(brand), mode: 'insensitive' } } });
+    if (model) and.push({ vehicleModel: { model: { equals: String(model), mode: 'insensitive' } } });
+    if (wheels && !Number.isNaN(Number(wheels))) and.push({ vehicleModel: { wheels: Number(wheels) } });
+    const where = and.length ? { AND: and } : {};
     const vehicles = await prisma.vehicle.findMany({
       where,
       include: { customer: true, vehicleModel: true },

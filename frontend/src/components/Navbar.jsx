@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaBars, FaBoxes, FaCar, FaCarSide, FaChartLine, FaChevronDown, FaClipboardList, FaCog, FaCogs,
-  FaHardHat, FaHistory, FaKey, FaPercent, FaShoppingCart, FaSignOutAlt, FaTachometerAlt, FaTags,
-  FaTimes, FaTools, FaUserCog, FaUsers, FaWrench,
+  FaHandHoldingHeart, FaHardHat, FaHistory, FaKey, FaPercent, FaShoppingCart, FaSignOutAlt, FaTachometerAlt, FaTags,
+  FaTimes, FaTools, FaTruck, FaUserCog, FaUsers, FaWrench,
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { useSettingsContext } from '../context/SettingsContext';
@@ -38,11 +38,14 @@ const MENUS = [
   },
   { label: 'Penjualan', icon: FaShoppingCart, to: '/sales', roles: OPS },
   { label: 'Teknisi', icon: FaHardHat, to: '/technicians', roles: OPS },
+  { label: 'Supplier', icon: FaTruck, to: '/suppliers', roles: OPS },
   {
     label: 'Laporan', icon: FaChartLine, roles: OPS,
     items: [
       { label: 'Laporan Layanan', desc: 'Rekap service', icon: FaTools, to: '/reports/service' },
       { label: 'Laporan Penjualan', desc: 'Rekap penjualan sparepart', icon: FaShoppingCart, to: '/reports/sales' },
+      { label: 'Laporan Sparepart', desc: 'Sparepart paling laris', icon: FaCogs, to: '/reports/sparepart' },
+      { label: 'Laporan Loyalitas', desc: 'Pelanggan setia', icon: FaHandHoldingHeart, to: '/reports/loyalty' },
       { label: 'Laporan Stok', desc: 'Nilai & status stok', icon: FaBoxes, to: '/reports/stock' },
     ],
   },

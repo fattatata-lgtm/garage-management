@@ -12,25 +12,34 @@ export default function StockMoveForm({ direction = 'MASUK' }) {
   const isIn = direction === 'MASUK';
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { form, setForm, bind, reset } = useForm({ sparepartId: searchParams.get('sparepartId') || '', quantity: '', note: '' });
+  const { form, setForm, bind, reset } = useForm({ sparepartId: searchParams.get('sparepartId') || '', quantity: '', supplierId: '', note: '' });
   const [spareparts, setSpareparts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get('/spareparts').then(({ data }) => setSpareparts(data)).finally(() => setLoading(false));
+    Promise.all([api.get('/spareparts'), api.get('/suppliers')])
+      .then(([sp, sup]) => { setSpareparts(sp.data); setSuppliers(sup.data); })
+      .finally(() => setLoading(false));
   }, []);
 
   const selected = spareparts.find((s) => String(s.id) === String(form.sparepartId));
 
+  // Barang masuk: otomatis pilih supplier bawaan sparepart (masih bisa diganti)
+  function pickSparepart(sp) {
+    setForm((f) => ({
+      ...f,
+      sparepartId: String(sp.id),
+      supplierId: isIn && !f.supplierId && sp.supplierId ? String(sp.supplierId) : f.supplierId,
+    }));
+  }
+
   async function submit(e) {
-    e.preventDefault(); setError('');
-    // SparepartPicker bukan <select required>, jadi validasi dilakukan manual
-    if (!form.sparepartId) { setError('Pilih sparepart terlebih dahulu.'); return; }
-    setSaving(true);
+    e.preventDefault(); setSaving(true); setError('');
     try {
-      await api.post(`/spareparts/${form.sparepartId}/stock-move`, { direction, quantity: form.quantity, note: form.note });
+      await api.post(`/spareparts/${form.sparepartId}/stock-move`, { direction, quantity: form.quantity, note: form.note, supplierId: isIn ? form.supplierId : undefined });
       navigate('/spareparts/stock-history');
     } catch (err) { setError(errMsg(err, 'Gagal mencatat pergerakan stok.')); }
     finally { setSaving(false); }
@@ -63,13 +72,18 @@ export default function StockMoveForm({ direction = 'MASUK' }) {
     >
       <div>
         <label className="label">Sparepart *</label>
-        <SparepartPicker
-          options={spareparts}
-          value={form.sparepartId}
-          onPick={(sp) => setForm((f) => ({ ...f, sparepartId: String(sp.id) }))}
-        />
+        <SparepartPicker options={spareparts} value={form.sparepartId} onPick={pickSparepart} />
         {selected && <p className="text-xs text-slate-400 mt-1">Stok tersedia saat ini: {selected.stock}</p>}
       </div>
+      {isIn && (
+        <div>
+          <label className="label">Supplier</label>
+          <select className="input" value={form.supplierId} onChange={bind('supplierId')}>
+            <option value="">-- Tanpa Supplier --</option>
+            {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+      )}
       <div><label className="label">Jumlah *</label><input type="number" min="1" className="input" required value={form.quantity} onChange={bind('quantity')} /></div>
       <div><label className="label">Keterangan</label><textarea className="input" rows={3} placeholder="Tambahkan keterangan (opsional)" value={form.note} onChange={bind('note')} /></div>
     </FormPage>

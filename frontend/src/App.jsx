@@ -18,6 +18,8 @@ import SparepartList from './pages/spareparts/SparepartList';
 import SparepartForm from './pages/spareparts/SparepartForm';
 import CategoryList from './pages/spareparts/CategoryList';
 import CategoryForm from './pages/spareparts/CategoryForm';
+import SupplierList from './pages/suppliers/SupplierList';
+import SupplierForm from './pages/suppliers/SupplierForm';
 import StockHistory from './pages/spareparts/StockHistory';
 import StockMoveForm from './pages/spareparts/StockMoveForm';
 import ServiceList from './pages/services/ServiceList';
@@ -63,13 +65,16 @@ export default function App() {
         <Route path="customers/:id" element={guard(OPS, <CustomerDetail />)} />
         <Route path="customers/:id/edit" element={guard(OPS, <CustomerForm />)} />
 
-        {/* Sparepart: Data, Kategori, Riwayat Stok */}
+        {/* Sparepart: Data, Kategori, Supplier, Riwayat Stok */}
         <Route path="spareparts" element={guard(OPS, <SparepartList />)} />
         <Route path="spareparts/new" element={guard(OPS, <SparepartForm />)} />
         <Route path="spareparts/:id/edit" element={guard(OPS, <SparepartForm />)} />
         <Route path="spareparts/categories" element={guard(OPS, <CategoryList />)} />
         <Route path="spareparts/categories/new" element={guard(OPS, <CategoryForm />)} />
         <Route path="spareparts/categories/:id/edit" element={guard(OPS, <CategoryForm />)} />
+        <Route path="suppliers" element={guard(OPS, <SupplierList />)} />
+        <Route path="suppliers/new" element={guard(OPS, <SupplierForm />)} />
+        <Route path="suppliers/:id/edit" element={guard(OPS, <SupplierForm />)} />
         <Route path="spareparts/stock-history" element={guard(OPS, <StockHistory />)} />
         <Route path="spareparts/stock-history/in" element={guard(OPS, <StockMoveForm direction="MASUK" />)} />
         <Route path="spareparts/stock-history/out" element={guard(OPS, <StockMoveForm direction="KELUAR" />)} />

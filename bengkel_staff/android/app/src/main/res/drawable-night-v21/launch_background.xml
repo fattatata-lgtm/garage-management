@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Layar peluncuran saat perangkat dalam mode gelap: latar gelap lembut, tanpa kilatan putih -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FF0B1019" />
+        </shape>
+    </item>
+</layer-list>
